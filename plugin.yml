@@ -1,0 +1,55 @@
+name: RealMute
+main: RealMute\Main
+version: 1.0.0
+api: 
+- 1.0.0
+- 1.1.0
+- 1.2.0
+- 1.2.1
+- 1.3.0
+- 1.3.1
+- 1.4.0
+- 1.4.1
+- 1.12.0
+- 1.13.0
+- 2.0.0
+load: POSTWORLD
+author: Leo3418
+description: A plugin that allows adminstrator to mute players in chat.
+website: https://github.com/Leo3418/RealMute
+
+commands:
+ rmute:
+  description: "Mute a player"
+  usage: "/rmute <player>"
+  permission: realmute.mute
+ runmute:
+  description: "Unmute a player"
+  usage: "/runmute <player>"
+  permission: realmute.unmute
+ muteall:
+  description: "Mute all players"
+  usage: "/muteall"
+  permission: realmute.muteall
+ unmuteall:
+  description: "Unmute all players"
+  usage: "/unmuteall"
+  permission: realmute.unmuteall
+  
+permissions:
+ realmute:
+  description: "Allows all RealMute commands"
+  default: op
+  children:
+   realmute.mute:
+    description: "Allows muting individual players"
+    default: op
+   realmute.unmute:
+    description: "Allows unmuting individual players"
+    default: op
+   realmute.muteall:
+    description: "Allows muting all players"
+    default: op
+   realmute.unmuteall:
+    description: "Allows unmuting individual players"
+    default: op
