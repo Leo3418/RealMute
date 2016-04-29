@@ -22,7 +22,7 @@ Permissions
 - `realmute.mute` Allows muting individual players
 - `realmute.unmute` Allows unmuting individual players
 - `realmute.muteall` Allows muting all players
-- `realmute.unmuteall` Allows unmuting individual players
+- `realmute.unmuteall` Allows unmuting individual players <br />
 Default setting of those permissions is **OP**.
 
 License
