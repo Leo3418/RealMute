@@ -8,6 +8,7 @@ Features
 - Mute and unmute individual players in chat
 - Keep muting players even if they quit and join server again
 - Mute all players in chat
+- An optional function to notify muted players when they are sending messages
 
 Usage
 ----------
@@ -15,15 +16,26 @@ Usage
 - `/runmute <player>` Unmute a player
 - `/muteall` Mute all players
 - `/unmuteall` Unmute all players
+- `/realmute help` View options
+- `/realmute notify` Toggle notification to muted players
+- `/realmute about` Show information about this plugin <br />
+Note: Starting from v1.1.1, player name is not case-sensitive.
 
 Permissions
 ----------
 - `realmute` Allows all RealMute commands
+- `realmute.option` Allows changing RealMute options
 - `realmute.mute` Allows muting individual players
 - `realmute.unmute` Allows unmuting individual players
 - `realmute.muteall` Allows muting all players
 - `realmute.unmuteall` Allows unmuting individual players <br />
 Default setting of those permissions is **OP**.
+
+Future Plan
+----------
+[ ] An optional function to exclude OPs in muting all players
+[ ] Automatically mute players if they send any prohibited contents in chat
+[ ] Timer-mute
 
 License
 ----------

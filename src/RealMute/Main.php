@@ -52,7 +52,7 @@ class Main extends PluginBase implements Listener{
 	}
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args){
 		switch($command->getName()){
-			case "rm":
+			case "realmute":
 				if(count($args) !== 1){
 					$sender->sendMessage("Usage: " . $command->getUsage());
 					return true;
@@ -60,8 +60,8 @@ class Main extends PluginBase implements Listener{
 				$option = array_shift($args);
 				if($option == "help"){
 					$helpmsg  = TextFormat::AQUA . "[RealMute] Options\n";
-					$helpmsg .= TextFormat::GOLD . "/rm notify " . TextFormat::WHITE . "Toggle notification to muted players\n";
-					$helpmsg .= TextFormat::GOLD . "/rm about " . TextFormat::WHITE . "Show information about this plugin\n";
+					$helpmsg .= TextFormat::GOLD . "/realmute notify " . TextFormat::WHITE . "Toggle notification to muted players\n";
+					$helpmsg .= TextFormat::GOLD . "/realmute about " . TextFormat::WHITE . "Show information about this plugin\n";
 					$sender->sendMessage($helpmsg);
 					return true;
 				}
@@ -99,8 +99,12 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				$name = array_shift($args);
-				if(!$this->getConfig()->get($name.".mute")){ 
-					$this->getConfig()->set($name.".mute", true);
+				if($this->getConfig()->exists($name.".mute", $lowercase = true)){
+					$sender->sendMessage(TextFormat::RED . "[RealMute] " . $name . " has been already muted.");
+					return true;
+				}
+				if(!$this->getConfig()->get($name.".mute") || !$this->getConfig()->get(strtolower($name).".mute")){
+					$this->getConfig()->set(strtolower($name).".mute", true);
 					$this->getConfig()->save();
 					$sender->sendMessage(TextFormat::GREEN ."[RealMute] Successfully muted " . $name . ".");
 					return true;
@@ -115,7 +119,13 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				$name = array_shift($args);
-				if($this->getConfig()->get($name.".mute") == true){
+				if($this->getConfig()->get(strtolower($name).".mute") == true){
+					$this->getConfig()->remove(strtolower($name).".mute", true);
+					$this->getConfig()->save();
+					$sender->sendMessage(TextFormat::GREEN ."[RealMute] Successfully unmuted " . $name . ".");
+					return true;
+				}
+				elseif($this->getConfig()->get($name.".mute") == true){
 					$this->getConfig()->remove($name.".mute", true);
 					$this->getConfig()->save();
 					$sender->sendMessage(TextFormat::GREEN ."[RealMute] Successfully unmuted " . $name . ".");
@@ -164,7 +174,7 @@ class Main extends PluginBase implements Listener{
 			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED . "You have been muted in chat.");
 			return true;
 		}
-		elseif($this->getConfig()->get($player.".mute") == true){
+		elseif($this->getConfig()->get($player.".mute") == true || $this->getConfig()->get(strtolower($player).".mute") == true){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED . "You have been muted in chat.");
 			return;
