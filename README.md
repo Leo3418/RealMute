@@ -33,9 +33,9 @@ Default setting of those permissions is **OP**.
 
 Future Plan
 ----------
-[ ] An optional function to exclude OPs in muting all players
-[ ] Automatically mute players if they send any prohibited contents in chat
-[ ] Timer-mute
+- [ ] An optional function to exclude OPs in muting all players
+- [ ] Automatically mute players if they send any prohibited contents in chat
+- [ ] Timer-mute
 
 License
 ----------
