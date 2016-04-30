@@ -1,6 +1,6 @@
 name: RealMute
 main: RealMute\Main
-version: 1.0.0
+version: 1.1.0
 api: 
 - 1.0.0
 - 1.1.0
@@ -19,6 +19,10 @@ description: A plugin that allows adminstrator to mute players in chat.
 website: https://github.com/Leo3418/RealMute
 
 commands:
+ rm:
+  description: "RealMute options"
+  usage: "/rm help|<options>"
+  permission: realmute.option
  rmute:
   description: "Mute a player"
   usage: "/rmute <player>"
@@ -41,6 +45,9 @@ permissions:
   description: "Allows all RealMute commands"
   default: op
   children:
+   realmute.option:
+    description: "Allows changing RealMute options"
+    default: op
    realmute.mute:
     description: "Allows muting individual players"
     default: op
