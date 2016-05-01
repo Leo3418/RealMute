@@ -5,7 +5,7 @@ RealMute is a plugin that allows adminstrator to mute players in chat.
 
 Upgrading from version 1.x?
 ----------
-Because changes of internal mechanisms of muting players, the **config.yml** will be automatically updated to 2.x format.<br />
+Because of changes of internal mechanisms of muting players, the **config.yml** will be automatically updated to 2.x format.<br />
 
 Features
 ----------
