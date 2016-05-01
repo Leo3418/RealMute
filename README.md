@@ -1,7 +1,16 @@
 RealMute: A PocketMine chat management plugin by Leo3418
 ==========
 
-RealMute is a plugin that allows adminstrator to mute players in chat. <br />
+RealMute is a plugin that allows adminstrator to mute players in chat. 
+
+Upgrading from version 1.x?
+----------
+Because changes of internal mechanisms of muting players, you need to mute players manually again after you upgraded. Sorry for the inconvenience. <br />
+The original *config.yml* file will be renamed to *config.bak*. <br />
+To see players you have muted before, open config.bak using any text viewer. In that file, all muted players are shown by the following pattern:
+```
+playername.mute: true
+```
 
 Features
 ----------
@@ -9,6 +18,7 @@ Features
 - Keep muting players even if they quit and join server again
 - Mute all players in chat
 - An optional function to notify muted players when they are sending messages
+- An optional function to keep allowing OPs sending messages while all players are muted
 
 Usage
 ----------
@@ -18,13 +28,15 @@ Usage
 - `/unmuteall` Unmute all players
 - `/realmute help` View options
 - `/realmute notify` Toggle notification to muted players
+- `/realmute muteop` Include/Exclude OPs from muting all players
 - `/realmute about` Show information about this plugin <br />
-Note: Starting from v1.1.1, player name is not case-sensitive.
+Note: Starting from v1.1.1, player name is no longer case-sensitive.
 
 Permissions
 ----------
 - `realmute` Allows all RealMute commands
 - `realmute.option` Allows changing RealMute options
+- `realmute.muteignored` Allows sending messages when all players are muted
 - `realmute.mute` Allows muting individual players
 - `realmute.unmute` Allows unmuting individual players
 - `realmute.muteall` Allows muting all players
@@ -33,7 +45,8 @@ Default setting of those permissions is **OP**.
 
 Future Plan
 ----------
-- [ ] An optional function to exclude OPs in muting all players
+- [x] An optional function to exclude OPs in muting all players
+- [ ] See all muted players and settings of this plugin
 - [ ] Automatically mute players if they send any prohibited contents in chat
 - [ ] Timer-mute
 

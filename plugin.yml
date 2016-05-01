@@ -1,6 +1,6 @@
 name: RealMute
 main: RealMute\Main
-version: 1.1.1
+version: 2.0.0
 api: 
 - 1.0.0
 - 1.1.0
@@ -45,6 +45,9 @@ permissions:
   description: "Allows all RealMute commands"
   default: op
   children:
+   realmute.muteignored:
+    description: "Allows sending messages when all players are muted"
+    default: op
    realmute.option:
     description: "Allows changing RealMute options"
     default: op
