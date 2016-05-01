@@ -62,12 +62,14 @@ class Main extends PluginBase implements Listener{
 				$i = strrpos($line, ".mute");
 				$name = substr($line, 0, $i);
 				$this->getConfig()->remove($name.".mute");
+				if(strlen($this->getConfig()->get("mutedplayers")) == 0) $this->getConfig()->set("mutedplayers", strtolower($name).",");
+				else $this->getConfig()->set("mutedplayers", $this->getConfig()->get("mutedplayers").strtolower($name).",");
 			}
 		}
 		$this->getConfig()->save();
 		if($oldVersion){
-			$this->getLogger()->warning("An old version of config.yml detected. Old file was renamed to config.bak.");
-			$this->getLogger()->warning("You need to mute players you blocked again. Sorry for the inconvenience.");
+			$this->getLogger()->info("An old version of config.yml detected. Old file was renamed to config.bak.");
+			$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 2.x!");
 		}
 		return true;
 	}
