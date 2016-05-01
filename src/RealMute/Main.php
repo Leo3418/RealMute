@@ -47,7 +47,7 @@ class Main extends PluginBase implements Listener{
 			"excludeop" => true,
 			"mutedplayers" => "",
 			));
-		# Clean up old player-mute config in config.yml
+		# config.yml converter
 		$config = fopen($this->getDataFolder()."config.yml", "r");
 		$oldVersion = false;
 		$copied = false;
@@ -148,7 +148,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				else{
-					$sender->sendMessage(TextFormat::RED."[RealMute] " . $name . " has been already muted.");
+					$sender->sendMessage(TextFormat::RED."[RealMute] ".$name." has been already muted.");
 					return true;
 				}
 			case "runmute":
@@ -164,11 +164,11 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				else{
-					$sender->sendMessage(TextFormat::RED."[RealMute] " . $name . " is not muted.");
+					$sender->sendMessage(TextFormat::RED."[RealMute] ".$name." is not muted.");
 					return true;
 				}
 			case "muteall":
-				if (count($args) !== 0){
+				if(count($args) !== 0){
 					$sender->sendMessage("Usage: ".$command->getUsage());
 					return true;
 				}
@@ -206,37 +206,43 @@ class Main extends PluginBase implements Listener{
 			if($this->getConfig()->get("excludeop") == true && $event->getPlayer()->hasPermission("realmute.muteignored")) return true;
 			else{
 				$event->setCancelled(true);
-				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED . "You have been muted in chat.");
+				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
 				return true;
 			}
 		}
 		elseif($this->isPlayerMuted($player)){
 			$event->setCancelled(true);
-			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED . "You have been muted in chat.");
+			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
 			return true;
 		}
 		else return true;
 	}
 	protected function isPlayerMuted($name){
 		foreach((explode(",",$this->getConfig()->get("mutedplayers"))) as $player){
-			if(strtolower($name) == $player) return true;
-			else return false;
+			if(strcmp(strtolower($name), $player) == 0){
+				return true;
+				break;
+			}
 		}
+		return false;
 	}
 	protected function unmute($name){
+		$mp = "";
+		$count = 0;
 		foreach((explode(",",$this->getConfig()->get("mutedplayers"))) as $player){
-			if(substr_count($this->getConfig()->get("mutedplayers"), ",") == 1){
-				$this->getConfig()->set("mutedplayers", "");
-				return true;
+			if(strcmp(strtolower($name), $player) == 0){
+				if(substr_count($this->getConfig()->get("mutedplayers"), ",") == 1){
+					$this->getConfig()->set("mutedplayers", "");
+					break;
+				}
 			}
 			else{
-				if(strtolower($name) !== $player) {
-					$this->getConfig()->set("mutedplayers", strtolower($player).",");
-					return true;
-				}
-				else return true;
+				$count += 1;
+				if(strcmp($count, substr_count($this->getConfig()->get("mutedplayers"), ",")) == 0) $mp .= $player;
+				else $mp .= $player.",";
 			}
 		}
-	}
+		$this->getConfig()->set("mutedplayers", $mp);
+		}
 }
 ?>
