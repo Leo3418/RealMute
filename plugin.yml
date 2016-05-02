@@ -1,6 +1,6 @@
 name: RealMute
 main: RealMute\Main
-version: 2.0.1
+version: 2.1.0
 api: 
 - 1.0.0
 - 1.1.0
@@ -16,7 +16,7 @@ api:
 load: POSTWORLD
 author: Leo3418
 description: A plugin that allows adminstrator to mute players in chat.
-website: https://github.com/Leo3418/RealMute
+website: https://github.com/Leo3418/RealMute/
 
 commands:
  realmute:

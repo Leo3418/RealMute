@@ -40,14 +40,21 @@ class Main extends PluginBase implements Listener{
 		$this->getLogger()->notice("Copyright (C) 2016 Leo3418");
 		$this->getLogger()->notice("RealMute is free software licensed under GNU GPLv3 with the absence of any warranty");
 		@mkdir($this->getDataFolder());
-		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, array(
+		$defaultconfig = array(
 			"version" => $this->getDescription()->getVersion(),
 			"muteall" => false,
 			"notification" => false,
 			"excludeop" => true,
 			"mutedplayers" => "",
-			));
-		# config.yml converter
+		);
+		if(file_exists($this->getDataFolder()."config.yml") && strcmp("2", $this->getConfig()->get("version")[0]) < 0){
+			copy($this->getDataFolder()."config.yml", $this->getDataFolder()."config.bak");
+			$this->getConfig()->setAll($defaultconfig);
+			$this->getLogger()->warning("Your config.yml is for a higher version of RealMute.");
+			$this->getLogger()->warning("config.yml has been downgraded to version 2.x. Old file was renamed to config.bak.");
+		}
+		else $config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
+		if(strcmp($this->getConfig()->get("version"), $this->getDescription()->getVersion()) !== 0) $this->getConfig()->set("version", $this->getDescription()->getVersion());
 		$config = fopen($this->getDataFolder()."config.yml", "r");
 		$oldVersion = false;
 		$copied = false;
@@ -86,9 +93,11 @@ class Main extends PluginBase implements Listener{
 				$option = array_shift($args);
 				if($option == "help"){
 					$helpmsg  = TextFormat::AQUA."[RealMute] Options\n";
-					$helpmsg .= TextFormat::GOLD."/realmute notify " . TextFormat::WHITE . "Toggle notification to muted players\n";
-					$helpmsg .= TextFormat::GOLD."/realmute muteop " . TextFormat::WHITE . "Include/Exclude OPs from muting all players\n";
-					$helpmsg .= TextFormat::GOLD."/realmute about " . TextFormat::WHITE . "Show information about this plugin\n";
+					$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
+					$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."Include/Exclude OPs from muting all players\n";
+					$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
+					$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
+					$helpmsg .= TextFormat::GOLD."/realmute about ".TextFormat::WHITE . "Show information about this plugin\n";
 					$sender->sendMessage($helpmsg);
 					return true;
 				}
@@ -120,13 +129,31 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($option == "status"){
+					$status = TextFormat::AQUA."[RealMute] Status\n";
+					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
+					$status .= TextFormat::WHITE."Notify muted players: ".$this->isOn("notification")."\n";
+					$status .= TextFormat::WHITE."Exclude OPs in muting all players: ".$this->isOn("excludeop")."\n";
+					$status .= TextFormat::WHITE."Number of muted players: ".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
+					$status .= TextFormat::WHITE."To see list of muted players, please use ".TextFormat::GOLD."/realmute list\n";
+					$sender->sendMessage($status);
+					return true;
+				}
+				if($option == "list"){
+					$list = explode(",",$this->getConfig()->get("mutedplayers"));
+					array_pop($list);
+					$output = TextFormat::AQUA."[RealMute] Muted players (".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1.).")\n";
+					$output .= implode(", ", $list);
+					$sender->sendMessage($output);
+					return true;
+				}
 				if($option == "about"){
-					$aboutmsg = TextFormat::AQUA."RealMute Version " . $this->getDescription()->getVersion() . "\n";
+					$aboutmsg = TextFormat::AQUA."RealMute Version ".$this->getDescription()->getVersion() . "\n";
 					$aboutmsg .= "RealMute is a plugin that allows adminstrator to mute players in chat.\n";
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
 					$aboutmsg .= "See http://www.gnu.org/licenses/ for details.\n";
-					$aboutmsg .= "You can find updates and source code of this plugin at " . $this->getDescription()->getWebsite() . "\n";
+					$aboutmsg .= "You can find updates and source code of this plugin, report bug, and contribute to this project at ".$this->getDescription()->getWebsite()."\n";
 					$sender->sendMessage($aboutmsg);
 					return true;
 				}
@@ -144,7 +171,7 @@ class Main extends PluginBase implements Listener{
 					if(strlen($this->getConfig()->get("mutedplayers")) == 0) $this->getConfig()->set("mutedplayers", strtolower($name).",");
 					else $this->getConfig()->set("mutedplayers", $this->getConfig()->get("mutedplayers").strtolower($name).",");
 					$this->getConfig()->save();
-					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted " . $name . ".");
+					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name.".");
 					return true;
 				}
 				else{
@@ -159,8 +186,7 @@ class Main extends PluginBase implements Listener{
 				$name = array_shift($args);
 				if($this->isPlayerMuted($name)){
 					$this->unmute($name);
-					$this->getConfig()->save();
-					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully unmuted " . $name . ".");
+					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully unmuted ".$name.".");
 					return true;
 				}
 				else{
@@ -195,7 +221,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				else{
-					$sender->sendMessage(TextFormat::RED."[RealMute] Players have been already unmuted.");
+					$sender->sendMessage(TextFormat::RED."[RealMute] Players are not muted.");
 					return true;
 				}
 		}
@@ -231,7 +257,7 @@ class Main extends PluginBase implements Listener{
 		$count = 0;
 		foreach((explode(",",$this->getConfig()->get("mutedplayers"))) as $player){
 			if(strcmp(strtolower($name), $player) == 0){
-				if(substr_count($this->getConfig()->get("mutedplayers"), ",") == 1){
+				if(count(explode(",",$this->getConfig()->get("mutedplayers"))) == 2){
 					$this->getConfig()->set("mutedplayers", "");
 					break;
 				}
@@ -243,6 +269,12 @@ class Main extends PluginBase implements Listener{
 			}
 		}
 		$this->getConfig()->set("mutedplayers", $mp);
-		}
+		$this->getConfig()->save();
+	}
+	protected function isOn($opt){
+		if($this->getConfig()->get($opt) == true) $text = TextFormat::GREEN."ON";
+		else $text = TextFormat::YELLOW."OFF";
+		return $text;
+	}
 }
 ?>
