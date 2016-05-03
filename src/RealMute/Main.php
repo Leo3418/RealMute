@@ -98,11 +98,11 @@ class Main extends PluginBase implements Listener{
 					$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
 					$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 					$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
-					$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned word list\n";
-					$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned word list\n";
+					$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list\n";
+					$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
 					$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
 					$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
-					$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned word list\n";
+					$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned-word list\n";
 					$helpmsg .= TextFormat::GOLD."/realmute about ".TextFormat::WHITE . "Show information about this plugin\n";
 					$sender->sendMessage($helpmsg);
 					return true;
@@ -176,11 +176,11 @@ class Main extends PluginBase implements Listener{
 					$word = array_shift($args);
 					if(!$this->inList("bannedwords", $word)){
 						$this->add("bannedwords", $word);
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully added ".$word." to banned word list.");
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully added ".$word." to banned-word list.");
 						return true;
 					}
 					else{
-						$sender->sendMessage(TextFormat::RED."[RealMute] ".$word." has been already added to banned word list.");
+						$sender->sendMessage(TextFormat::RED."[RealMute] ".$word." has been already added to banned-word list.");
 						return true;
 					}
 				}
@@ -192,11 +192,11 @@ class Main extends PluginBase implements Listener{
 					$word = array_shift($args);
 					if($this->inList("bannedwords", $word)){
 						$this->remove("bannedwords", $word);
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully deleted ".$word." from banned word list.");
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully deleted ".$word." from banned-word list.");
 						return true;
 					}
 					else{
-						$sender->sendMessage(TextFormat::RED."[RealMute] ".$word." is not in the banned word list.");
+						$sender->sendMessage(TextFormat::RED."[RealMute] ".$word." is not in the banned-word list.");
 						return true;
 					}
 				}
@@ -213,10 +213,6 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				if($option == "about"){
-					if(count($args) !== 0){
-						$sender->sendMessage("Usage: ".$command->getUsage());
-						return true;
-					}
 					$aboutmsg = TextFormat::AQUA."[RealMute] Version ".$this->getDescription()->getVersion()."\n";
 					$aboutmsg .= "RealMute is a plugin that allows adminstrator to mute players in chat.\n";
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
@@ -301,7 +297,7 @@ class Main extends PluginBase implements Listener{
 			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
 			return true;
 		}
-		foreach((explode(",",$this->getConfig()->get("bannedwords"))) as $bannedword){
+		foreach(explode(",",$this->getConfig()->get("bannedwords")) as $bannedword){
 			if(stripos($message, $bannedword) !== false){
 				$event->setCancelled(true);
 				if($this->getConfig()->get("wordmute") == true){
@@ -316,7 +312,6 @@ class Main extends PluginBase implements Listener{
 				return true;
 				break;
 			}
-			else return true;
 		}
 	}
 	protected function inList($opt, $target){
