@@ -45,7 +45,9 @@ class Main extends PluginBase implements Listener{
 			"muteall" => false,
 			"notification" => false,
 			"excludeop" => true,
+			"wordmute" => false,
 			"mutedplayers" => "",
+			"bannedwords" => "",
 		);
 		if(file_exists($this->getDataFolder()."config.yml") && strcmp("2", $this->getConfig()->get("version")[0]) < 0){
 			copy($this->getDataFolder()."config.yml", $this->getDataFolder()."config.bak");
@@ -69,8 +71,7 @@ class Main extends PluginBase implements Listener{
 				$i = strrpos($line, ".mute");
 				$name = substr($line, 0, $i);
 				$this->getConfig()->remove($name.".mute");
-				if(strlen($this->getConfig()->get("mutedplayers")) == 0) $this->getConfig()->set("mutedplayers", strtolower($name).",");
-				else $this->getConfig()->set("mutedplayers", $this->getConfig()->get("mutedplayers").strtolower($name).",");
+				$this->add("mutedplayers", $name);
 			}
 		}
 		$this->getConfig()->save();
@@ -78,7 +79,6 @@ class Main extends PluginBase implements Listener{
 			$this->getLogger()->info("An old version of config.yml detected. Old file was renamed to config.bak.");
 			$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 2.x!");
 		}
-		return true;
 	}
 	public function onDisable(){
 		$this->getConfig()->save();
@@ -86,7 +86,7 @@ class Main extends PluginBase implements Listener{
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args){
 		switch($command->getName()){
 			case "realmute":
-				if(count($args) !== 1){
+				if(count($args) !== 1 && count($args) !== 2){
 					$sender->sendMessage("Usage: ".$command->getUsage());
 					return true;
 				}
@@ -94,9 +94,13 @@ class Main extends PluginBase implements Listener{
 				if($option == "help"){
 					$helpmsg  = TextFormat::AQUA."[RealMute] Options\n";
 					$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
-					$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."Include/Exclude OPs from muting all players\n";
+					$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
+					$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
+					$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned word list\n";
+					$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned word list\n";
 					$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
 					$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
+					$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned word list\n";
 					$helpmsg .= TextFormat::GOLD."/realmute about ".TextFormat::WHITE . "Show information about this plugin\n";
 					$sender->sendMessage($helpmsg);
 					return true;
@@ -119,13 +123,27 @@ class Main extends PluginBase implements Listener{
 					if($this->getConfig()->get("excludeop") == true){
 						$this->getConfig()->set("excludeop", false);
 						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] OPs will be muted when all players are muted.");
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] OPs will be muted with all players.");
 						return true;
 					}
 					else{
 						$this->getConfig()->set("excludeop", true);
 						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] OPs will be excluded in muting all players.");
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] When muting all players, OPs will be excluded.");
+						return true;
+					}
+				}
+				if($option == "wordmute"){
+					if($this->getConfig()->__get("wordmute") == false){
+						$this->getConfig()->set("wordmute", true);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Players will be automatically muted if they send banned words.");
+						return true;
+					}
+					else{
+						$this->getConfig()->set("wordmute", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players will not muted if they send banned words.");
 						return true;
 					}
 				}
@@ -133,22 +151,71 @@ class Main extends PluginBase implements Listener{
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
 					$status .= TextFormat::WHITE."Notify muted players: ".$this->isOn("notification")."\n";
-					$status .= TextFormat::WHITE."Exclude OPs in muting all players: ".$this->isOn("excludeop")."\n";
-					$status .= TextFormat::WHITE."Number of muted players: ".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
-					$status .= TextFormat::WHITE."To see list of muted players, please use ".TextFormat::GOLD."/realmute list\n";
+					$status .= TextFormat::WHITE."Exclude OPs when muting all players: ".$this->isOn("excludeop")."\n";
+					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
+					$status .= TextFormat::WHITE."Number of muted players: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
+					$status .= TextFormat::WHITE."Number of banned words: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1)."\n";
 					$sender->sendMessage($status);
 					return true;
 				}
 				if($option == "list"){
 					$list = explode(",",$this->getConfig()->get("mutedplayers"));
 					array_pop($list);
-					$output = TextFormat::AQUA."[RealMute] Muted players (".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1.).")\n";
+					$output = TextFormat::AQUA."[RealMute] Muted players ".TextFormat::WHITE."(".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1.).")\n";
+					$output .= implode(", ", $list);
+					$sender->sendMessage($output);
+					return true;
+				}
+				if($option == "addword"){
+					if(count($args) !== 1){
+						$sender->sendMessage("Usage: ".$command->getUsage());
+						return true;
+					}
+					$word = array_shift($args);
+					if(!$this->inList("bannedwords", $word)){
+						$this->add("bannedwords", $word);
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully added ".$word." to banned word list.");
+						return true;
+					}
+					else{
+						$sender->sendMessage(TextFormat::RED."[RealMute] ".$word." has been already added to banned word list.");
+						return true;
+					}
+				}
+				if($option == "delword"){
+					if(count($args) !== 1){
+						$sender->sendMessage("Usage: ".$command->getUsage());
+						return true;
+					}
+					$word = array_shift($args);
+					if($this->inList("bannedwords", $word)){
+						$this->remove("bannedwords", $word);
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully deleted ".$word." from banned word list.");
+						return true;
+					}
+					else{
+						$sender->sendMessage(TextFormat::RED."[RealMute] ".$word." is not in the banned word list.");
+						return true;
+					}
+				}
+				if($option == "word"){
+					if(count($args) !== 0){
+						$sender->sendMessage("Usage: ".$command->getUsage());
+						return true;
+					}
+					$list = explode(",",$this->getConfig()->get("bannedwords"));
+					array_pop($list);
+					$output = TextFormat::AQUA."[RealMute] Banned words ".TextFormat::WHITE."(".(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1.).")\n";
 					$output .= implode(", ", $list);
 					$sender->sendMessage($output);
 					return true;
 				}
 				if($option == "about"){
-					$aboutmsg = TextFormat::AQUA."RealMute Version ".$this->getDescription()->getVersion() . "\n";
+					if(count($args) !== 0){
+						$sender->sendMessage("Usage: ".$command->getUsage());
+						return true;
+					}
+					$aboutmsg = TextFormat::AQUA."[RealMute] Version ".$this->getDescription()->getVersion()."\n";
 					$aboutmsg .= "RealMute is a plugin that allows adminstrator to mute players in chat.\n";
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
@@ -167,10 +234,8 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				$name = array_shift($args);
-				if(!$this->isPlayerMuted($name)){
-					if(strlen($this->getConfig()->get("mutedplayers")) == 0) $this->getConfig()->set("mutedplayers", strtolower($name).",");
-					else $this->getConfig()->set("mutedplayers", $this->getConfig()->get("mutedplayers").strtolower($name).",");
-					$this->getConfig()->save();
+				if(!$this->inList("mutedplayers", $name)){
+					$this->add("mutedplayers", $name);
 					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name.".");
 					return true;
 				}
@@ -184,20 +249,16 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				$name = array_shift($args);
-				if($this->isPlayerMuted($name)){
-					$this->unmute($name);
+				if($this->inList("mutedplayers", $name)){
+					$this->remove("mutedplayers", $name);
 					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully unmuted ".$name.".");
 					return true;
 				}
 				else{
-					$sender->sendMessage(TextFormat::RED."[RealMute] ".$name." is not muted.");
+					$sender->sendMessage(TextFormat::RED."[RealMute] ".$name." has not been muted yet.");
 					return true;
 				}
 			case "muteall":
-				if(count($args) !== 0){
-					$sender->sendMessage("Usage: ".$command->getUsage());
-					return true;
-				}
 				if($this->getConfig()->__get("muteall") == false){
 					$this->getConfig()->set("muteall", true);
 					$this->getConfig()->set("muteall", true);
@@ -206,14 +267,10 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				else{
-					$sender->sendMessage(TextFormat::RED."[RealMute] Players have been already muted.");
+					$sender->sendMessage(TextFormat::RED."[RealMute] You have already muted all players.");
 					return true;
 				}
 			case "unmuteall":
-				if(count($args) !== 0){
-					$sender->sendMessage("Usage: ".$command->getUsage());
-					return true;
-				}
 				if($this->getConfig()->__get("muteall") == true){
 					$this->getConfig()->set("muteall", false);
 					$this->getConfig()->save();
@@ -221,54 +278,76 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				else{
-					$sender->sendMessage(TextFormat::RED."[RealMute] Players are not muted.");
+					$sender->sendMessage(TextFormat::RED."[RealMute] You need to mute all players first.");
 					return true;
 				}
 		}
 	}
 	public function onPlayerChat(PlayerChatEvent $event){
 		$player = $event->getPlayer()->getName();
+		$words = explode(" ", $event->getMessage());
 		if($this->getConfig()->get("muteall") == true){
 			if($this->getConfig()->get("excludeop") == true && $event->getPlayer()->hasPermission("realmute.muteignored")) return true;
 			else{
 				$event->setCancelled(true);
-				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Administrator has muted all players in chat.");
 				return true;
 			}
 		}
-		elseif($this->isPlayerMuted($player)){
+		elseif($this->inList("mutedplayers", $player)){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
 			return true;
 		}
-		else return true;
+		foreach($words as $word){
+			if($this->inList("bannedwords", $word)){
+				$event->setCancelled(true);
+				if($this->getConfig()->__get("wordmute") == true){
+					if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+					else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+					$this->add("mutedplayers", $player);
+					$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
+					return true;
+					break;
+				}
+				else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contents banned word set by administrator.");
+				return true;
+				break;
+			}
+			else return true;
+		}
 	}
-	protected function isPlayerMuted($name){
-		foreach((explode(",",$this->getConfig()->get("mutedplayers"))) as $player){
-			if(strcmp(strtolower($name), $player) == 0){
+	protected function inList($opt, $target){
+		foreach((explode(",",$this->getConfig()->get($opt))) as $item){
+			if(strcmp(strtolower($target), $item) == 0){
 				return true;
 				break;
 			}
 		}
 		return false;
 	}
-	protected function unmute($name){
-		$mp = "";
+	protected function add($opt, $target){
+		if(count(explode(",",$this->getConfig()->get($opt))) == 1) $this->getConfig()->set($opt, strtolower($target).",");
+		else $this->getConfig()->set($opt, $this->getConfig()->get($opt).strtolower($target).",");
+		$this->getConfig()->save();
+	}
+	protected function remove($opt, $target){
+		$newlist = "";
 		$count = 0;
-		foreach((explode(",",$this->getConfig()->get("mutedplayers"))) as $player){
-			if(strcmp(strtolower($name), $player) == 0){
-				if(count(explode(",",$this->getConfig()->get("mutedplayers"))) == 2){
-					$this->getConfig()->set("mutedplayers", "");
+		foreach((explode(",",$this->getConfig()->get($opt))) as $item){
+			if(strcmp(strtolower($target), $item) == 0){
+				if(count(explode(",",$this->getConfig()->get($opt))) == 2){
+					$this->getConfig()->set($opt, "");
 					break;
 				}
 			}
 			else{
 				$count += 1;
-				if(strcmp($count, substr_count($this->getConfig()->get("mutedplayers"), ",")) == 0) $mp .= $player;
-				else $mp .= $player.",";
+				if(strcmp($count, substr_count($this->getConfig()->get($opt), ",")) == 0) $newlist .= $item;
+				else $newlist .= $item.",";
 			}
 		}
-		$this->getConfig()->set("mutedplayers", $mp);
+		$this->getConfig()->set($opt, $newlist);
 		$this->getConfig()->save();
 	}
 	protected function isOn($opt){

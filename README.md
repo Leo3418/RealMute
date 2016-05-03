@@ -5,7 +5,7 @@ RealMute is a plugin that allows adminstrator to mute players in chat.
 
 Upgrading from version 1.x?
 ----------
-Because of changes of internal mechanisms of muting players, the **config.yml** will be automatically updated to 2.x format.<br />
+Because of changes of internal mechanisms of muting players, the **config.yml** will be automatically updated to v2.x format.<br />
 
 Features
 ----------
@@ -15,6 +15,7 @@ Features
 - See list of muted players and status of the plugin
 - An optional function to notify muted players when they are sending messages
 - An optional function to keep allowing OPs sending messages while all players are muted
+- Block and mute players if they send any prohibited contents set by adminstrator
 
 Usage
 ----------
@@ -25,10 +26,21 @@ Usage
 - `/realmute help` View options
 - `/realmute notify` Toggle notification to muted players
 - `/realmute muteop` Include/Exclude OPs from muting all players
+- `/realmute wordmute` Turn on/off auto-muting players if they send banned words
+- `/realmute addword <word>` Add a keyword to banned word list
+- `/realmute delword <word>` Delete a keyword from banned word list
 - `/realmute status` View current status of this plugin
 - `/realmute list` List muted players
 - `/realmute about` Show information about this plugin <br />
 Note: Starting from v1.1.1, player name is no longer case-sensitive.
+
+Default Configuration
+----------
+| Description | Default Setting |
+| :---: | :---: |
+| Notification to muted players | OFF |
+| Exclude OPs from muting all players | ON |
+| Auto-mute players if they send banned words | OFF |
 
 Permissions
 ----------
@@ -45,7 +57,9 @@ Future Plan
 ----------
 - [x] An optional function to exclude OPs in muting all players
 - [x] See all muted players and settings of this plugin
-- [ ] Automatically mute players if they send any prohibited contents in chat
+- [x] Automatically mute players if they send any prohibited contents in chat
+- [ ] Improve mechanism of checking contents that players send
+- [ ] An optional function to ban private messages along with chat
 - [ ] Timer-mute
 
 License
