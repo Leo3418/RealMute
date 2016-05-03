@@ -55,30 +55,32 @@ class Main extends PluginBase implements Listener{
 			$this->getLogger()->warning("Your config.yml is for a higher version of RealMute.");
 			$this->getLogger()->warning("config.yml has been downgraded to version 2.x. Old file was renamed to config.bak.");
 		}
-		else $config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
-		if(strcmp($this->getConfig()->get("version"), $this->getDescription()->getVersion()) !== 0) $this->getConfig()->set("version", $this->getDescription()->getVersion());
-		$config = fopen($this->getDataFolder()."config.yml", "r");
-		$oldVersion = false;
-		$copied = false;
-		while(!feof($config)){
-			$line = fgets($config);
-			if(strpos($line, ".mute")){
-				$oldVersion = true;
-				while(!$copied){
-					copy($this->getDataFolder()."config.yml", $this->getDataFolder()."config.bak");
-					$copied = true;
+		if(file_exists($this->getDataFolder()."config.yml") && strcmp($this->getConfig()->get("version"), $this->getDescription()->getVersion()) !== 0) $this->getConfig()->set("version", $this->getDescription()->getVersion());
+		if(file_exists($this->getDataFolder()."config.yml")){
+			$config = fopen($this->getDataFolder()."config.yml", "r");
+			$oldVersion = false;
+			$copied = false;
+			while(!feof($config)){
+				$line = fgets($config);
+				if(strpos($line, ".mute")){
+					$oldVersion = true;
+					while(!$copied){
+						copy($this->getDataFolder()."config.yml", $this->getDataFolder()."config.bak");
+						$copied = true;
+					}
+					$i = strrpos($line, ".mute");
+					$name = substr($line, 0, $i);
+					$this->getConfig()->remove($name.".mute");
+					$this->add("mutedplayers", $name);
 				}
-				$i = strrpos($line, ".mute");
-				$name = substr($line, 0, $i);
-				$this->getConfig()->remove($name.".mute");
-				$this->add("mutedplayers", $name);
+			}
+			if($oldVersion){
+				$this->getLogger()->info("An old version of config.yml detected. Old file was renamed to config.bak.");
+				$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 2.x!");
 			}
 		}
+		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
 		$this->getConfig()->save();
-		if($oldVersion){
-			$this->getLogger()->info("An old version of config.yml detected. Old file was renamed to config.bak.");
-			$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 2.x!");
-		}
 	}
 	public function onDisable(){
 		$this->getConfig()->save();
@@ -106,7 +108,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				if($option == "notify"){
-					if($this->getConfig()->__get("notification") == false){
+					if($this->getConfig()->get("notification") == false){
 						$this->getConfig()->set("notification", true);
 						$this->getConfig()->save();
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Muted players will be notified when they are sending messages.");
@@ -134,7 +136,7 @@ class Main extends PluginBase implements Listener{
 					}
 				}
 				if($option == "wordmute"){
-					if($this->getConfig()->__get("wordmute") == false){
+					if($this->getConfig()->get("wordmute") == false){
 						$this->getConfig()->set("wordmute", true);
 						$this->getConfig()->save();
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Players will be automatically muted if they send banned words.");
@@ -259,7 +261,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 			case "muteall":
-				if($this->getConfig()->__get("muteall") == false){
+				if($this->getConfig()->get("muteall") == false){
 					$this->getConfig()->set("muteall", true);
 					$this->getConfig()->set("muteall", true);
 					$this->getConfig()->save();
@@ -271,7 +273,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 			case "unmuteall":
-				if($this->getConfig()->__get("muteall") == true){
+				if($this->getConfig()->get("muteall") == true){
 					$this->getConfig()->set("muteall", false);
 					$this->getConfig()->save();
 					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully unmuted all players.");
@@ -285,7 +287,7 @@ class Main extends PluginBase implements Listener{
 	}
 	public function onPlayerChat(PlayerChatEvent $event){
 		$player = $event->getPlayer()->getName();
-		$words = explode(" ", $event->getMessage());
+		$message = $event->getMessage();
 		if($this->getConfig()->get("muteall") == true){
 			if($this->getConfig()->get("excludeop") == true && $event->getPlayer()->hasPermission("realmute.muteignored")) return true;
 			else{
@@ -299,10 +301,10 @@ class Main extends PluginBase implements Listener{
 			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
 			return true;
 		}
-		foreach($words as $word){
-			if($this->inList("bannedwords", $word)){
+		foreach((explode(",",$this->getConfig()->get("bannedwords"))) as $bannedword){
+			if(stripos($message, $bannedword) !== false){
 				$event->setCancelled(true);
-				if($this->getConfig()->__get("wordmute") == true){
+				if($this->getConfig()->get("wordmute") == true){
 					if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
 					else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 					$this->add("mutedplayers", $player);
@@ -310,7 +312,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 					break;
 				}
-				else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contents banned word set by administrator.");
+				else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 				return true;
 				break;
 			}
