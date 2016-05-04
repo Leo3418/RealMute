@@ -94,18 +94,26 @@ class Main extends PluginBase implements Listener{
 				}
 				$option = array_shift($args);
 				if($option == "help"){
-					$helpmsg  = TextFormat::AQUA."[RealMute] Options\n";
-					$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
-					$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
-					$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
-					$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list\n";
-					$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
-					$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
-					$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
-					$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned-word list\n";
-					$helpmsg .= TextFormat::GOLD."/realmute about ".TextFormat::WHITE . "Show information about this plugin\n";
-					$sender->sendMessage($helpmsg);
-					return true;
+					if(count($args) !== 1 || array_shift($args) == 1){
+						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 1/2)"."\n";
+						$helpmsg .= TextFormat::GOLD."/realmute help <page> ".TextFormat::WHITE."Jump to another page of Help\n";
+						$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
+						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
+						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
+						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
+						$sender->sendMessage($helpmsg);
+						return true;
+					}
+					else{
+						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/2)"."\n";
+						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
+						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
+						$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
+						$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned-word list\n";
+						$helpmsg .= TextFormat::GOLD."/realmute about ".TextFormat::WHITE . "Show information about this plugin\n";
+						$sender->sendMessage($helpmsg);
+						return true;
+					}
 				}
 				if($option == "notify"){
 					if($this->getConfig()->get("notification") == false){
@@ -209,6 +217,7 @@ class Main extends PluginBase implements Listener{
 					array_pop($list);
 					$output = TextFormat::AQUA."[RealMute] Banned words ".TextFormat::WHITE."(".(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1.).")\n";
 					$output .= implode(", ", $list);
+					$output .= TextFormat::GOLD."\nNote: ".TextFormat::WHITE."If a word begins with the exclamation mark, it will only be blocked if player sends it as an individual word.";
 					$sender->sendMessage($output);
 					return true;
 				}
@@ -218,7 +227,7 @@ class Main extends PluginBase implements Listener{
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
 					$aboutmsg .= "See http://www.gnu.org/licenses/ for details.\n";
-					$aboutmsg .= "You can find updates and source code of this plugin, report bug, and contribute to this project at ".$this->getDescription()->getWebsite()."\n";
+					$aboutmsg .= "You can find updates, documentations and source code of this plugin, report bug, and contribute to this project at ".$this->getDescription()->getWebsite()."\n";
 					$sender->sendMessage($aboutmsg);
 					return true;
 				}
@@ -298,19 +307,40 @@ class Main extends PluginBase implements Listener{
 			return true;
 		}
 		foreach(explode(",",$this->getConfig()->get("bannedwords")) as $bannedword){
-			if(stripos($message, $bannedword) !== false){
-				$event->setCancelled(true);
-				if($this->getConfig()->get("wordmute") == true){
-					if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+			if(strlen($bannedword)!== 0 && $bannedword[0] == "!"){
+				$bannedword = substr($bannedword, 1);
+				foreach(explode(" ",$message) as $word){
+					if(strcmp(strtolower($word), $bannedword) == 0){
+						$event->setCancelled(true);
+						if($this->getConfig()->get("wordmute") == true){
+							if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+							else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+							$this->add("mutedplayers", $player);
+							$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
+							return true;
+							break;
+						}
+						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+						return true;
+						break;
+					}
+				}
+			}
+			else{
+				if(stripos($message, $bannedword) !== false){
+					$event->setCancelled(true);
+					if($this->getConfig()->get("wordmute") == true){
+						if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+						$this->add("mutedplayers", $player);
+						$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
+						return true;
+						break;
+					}
 					else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
-					$this->add("mutedplayers", $player);
-					$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 					return true;
 					break;
 				}
-				else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
-				return true;
-				break;
 			}
 		}
 	}
