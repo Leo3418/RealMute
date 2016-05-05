@@ -1,6 +1,6 @@
 <?php  
 /* 
-	RealMute, a plugin that allows adminstrator to mute players in chat.
+	RealMute, a plugin that allows administrator to mute players in chat.
 	Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)
 
 	This program is free software: you can redistribute it and/or modify
@@ -241,7 +241,7 @@ class Main extends PluginBase implements Listener{
 				}
 				if($option == "about"){
 					$aboutmsg = TextFormat::AQUA."[RealMute] Version ".$this->getDescription()->getVersion()."\n";
-					$aboutmsg .= "RealMute is a plugin that allows adminstrator to mute players in chat.\n";
+					$aboutmsg .= "RealMute is a plugin that allows administrator to mute players in chat.\n";
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
 					$aboutmsg .= "See http://www.gnu.org/licenses/ for details.\n";

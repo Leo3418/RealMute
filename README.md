@@ -12,7 +12,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * An optional function to notify muted players when they are sending messages
 * An optional function to keep allowing OPs sending messages while all players are muted
 * An optional function to block players' private messages alongside chat messages
-* Block and mute players if they send any prohibited contents set by adminstrator
+* Block and mute players if they send any prohibited contents set by administrator
 
 ## Usage
 * `/rmute <player>` Mute a player
@@ -58,6 +58,8 @@ Default setting of those permissions is **OP**.
 * [x] Improve mechanism of checking contents that players send
 * [x] An optional function to ban private messages along with chat
 * [ ] Time-limited mute
+* [ ] Automatically block players who send spam messages
+* [ ] Time-limitedly mute players who are automatically blocked by this plugin
 
 ## License
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  
