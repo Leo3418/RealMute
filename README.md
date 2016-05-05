@@ -57,7 +57,7 @@ Default setting of those permissions is **OP**.
 * [x] Automatically mute players if they send any prohibited contents in chat
 * [x] Improve mechanism of checking contents that players send
 * [x] An optional function to ban private messages along with chat
-* [ ] Timer-mute
+* [ ] Time-limited mute
 
 ## License
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  
