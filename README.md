@@ -12,6 +12,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * See list of muted players and status of the plugin
 * An optional function to notify muted players when they are sending messages
 * An optional function to keep allowing OPs sending messages while all players are muted
+* An optional function to block players' private messages alongside chat messages
 * Block and mute players if they send any prohibited contents set by adminstrator
 
 ## Usage
@@ -45,7 +46,8 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
   * `realmute.mute` Allows muting individual players
   * `realmute.unmute` Allows unmuting individual players
   * `realmute.muteall` Allows muting all players
-  * `realmute.unmuteall` Allows unmuting individual players  
+  * `realmute.unmuteall` Allows unmuting individual players
+
 Default setting of those permissions is **OP**.
 
 ## Future Plan
@@ -53,7 +55,7 @@ Default setting of those permissions is **OP**.
 * [x] See all muted players and settings of this plugin
 * [x] Automatically mute players if they send any prohibited contents in chat
 * [x] Improve mechanism of checking contents that players send
-* [ ] An optional function to ban private messages along with chat
+* [x] An optional function to ban private messages along with chat
 * [ ] Timer-mute
 
 ## License

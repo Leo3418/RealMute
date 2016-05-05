@@ -33,6 +33,7 @@ use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
+use pocketmine\event\player\PlayerCommandPreprocessEvent;
 
 class Main extends PluginBase implements Listener{
 	public function onEnable(){
@@ -46,6 +47,7 @@ class Main extends PluginBase implements Listener{
 			"notification" => false,
 			"excludeop" => true,
 			"wordmute" => false,
+			"banpm" => false,
 			"mutedplayers" => "",
 			"bannedwords" => "",
 		);
@@ -100,12 +102,13 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
 						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
-						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
+						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
 						$sender->sendMessage($helpmsg);
 						return true;
 					}
 					else{
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/2)"."\n";
+						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
 						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
 						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
 						$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
@@ -157,12 +160,27 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($option == "banpm"){
+					if($this->getConfig()->get("banpm") == false){
+						$this->getConfig()->set("banpm", true);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Private messages sent by muted players will be blocked.");
+						return true;
+					}
+					else{
+						$this->getConfig()->set("banpm", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players can send private messages when they are muted in chat.");
+						return true;
+					}
+				}
 				if($option == "status"){
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
 					$status .= TextFormat::WHITE."Notify muted players: ".$this->isOn("notification")."\n";
 					$status .= TextFormat::WHITE."Exclude OPs when muting all players: ".$this->isOn("excludeop")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
+					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
 					$status .= TextFormat::WHITE."Number of muted players: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
 					$status .= TextFormat::WHITE."Number of banned words: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1)."\n";
 					$sender->sendMessage($status);
@@ -342,6 +360,15 @@ class Main extends PluginBase implements Listener{
 					break;
 				}
 			}
+		}
+	}
+	public function onPlayerCommand(PlayerCommandPreprocessEvent $event){
+		$player = $event->getPlayer()->getName();
+		$command = strtolower($event->getMessage());
+		if($this->getConfig()->get("banpm") == true && $this->inList("mutedplayers", $player) && substr($command, 0, 6) == "/tell "){
+			$event->setCancelled(true);
+			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages.");
+			return true;
 		}
 	}
 	protected function inList($opt, $target){
