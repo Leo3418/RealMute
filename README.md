@@ -1,5 +1,4 @@
 # RealMute: A PocketMine chat management plugin by Leo3418
-
 RealMute is a plugin that allows adminstrator to mute players in chat. 
 
 ## Upgrading from version 1.x?
@@ -24,6 +23,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * `/realmute notify` Toggle notification to muted players
 * `/realmute muteop` Include/Exclude OPs from muting all players
 * `/realmute wordmute` Turn on/off auto-muting players if they send banned words
+* `/realmute banpm` Turn on/off blocking private messages from muted players
 * `/realmute addword <word>` Add a keyword to banned word list
 * `/realmute delword <word>` Delete a keyword from banned word list
 * `/realmute status` View current status of this plugin
