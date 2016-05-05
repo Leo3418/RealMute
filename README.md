@@ -38,7 +38,7 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
 | Notification to muted players | OFF |
 | Exclude OPs from muting all players | ON |
 | Auto-mute players if they send banned words | OFF |
-| Blocking muted players； private messages | OFF |
+| Blocking muted players private messages | OFF |
 
 ## Permissions
 * `realmute` Allows all RealMute commands
