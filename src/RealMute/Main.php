@@ -19,21 +19,16 @@
 
 namespace RealMute;
 
-use pocketmine\plugin\PluginBase;
-use pocketmine\event\Listener;
-use pocketmine\command\Command;
-use pocketmine\command\CommandSender;
-use pocketmine\command\CommandExecutor;
-use pocketmine\event\player\PlayerInteractEvent;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\level\Position;
-use pocketmine\event\block\SignChangeEvent;
-use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\Player;
 use pocketmine\Server;
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerChatEvent;
+use pocketmine\event\player\PlayerCommandPreprocessEvent;
+use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
-use pocketmine\event\player\PlayerCommandPreprocessEvent;
 
 class Main extends PluginBase implements Listener{
 	public function onEnable(){
@@ -41,6 +36,7 @@ class Main extends PluginBase implements Listener{
 		$this->getLogger()->notice("Copyright (C) 2016 Leo3418");
 		$this->getLogger()->notice("RealMute is free software licensed under GNU GPLv3 with the absence of any warranty");
 		@mkdir($this->getDataFolder());
+		if(!is_dir($this->getDataFolder()."players")) mkdir($this->getDataFolder()."players", 0777, true);
 		$defaultconfig = array(
 			"version" => $this->getDescription()->getVersion(),
 			"muteall" => false,
@@ -189,8 +185,33 @@ class Main extends PluginBase implements Listener{
 				if($option == "list"){
 					$list = explode(",",$this->getConfig()->get("mutedplayers"));
 					array_pop($list);
+					$product = array();
+					$timelimited = false;
+					foreach($list as $player){
+						$unmute = false;
+						if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
+							$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+							$file = fopen($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml", "r");
+							fgets($file);
+							$unmutetime = fgets($file);
+							if($unmutetime[0] == "u"){ # Windows sucks on "unlink()", so the only way to check if the player has been timer-muted is to ckeck file contents rather than to check file existence
+								$unmutetime = substr($unmutetime, 11);
+								if($unmutetime > time()){
+									$timelimited = true;
+									$remaining = (ceil(($unmutetime - time())/60));
+									$player = $player."(".$remaining.")";
+								}
+								else{
+									$this->remove("mutedplayers", $player);
+									$unmute = true;
+								}
+							}
+						}
+						if($unmute == false) $product[] = $player;
+					}
 					$output = TextFormat::AQUA."[RealMute] Muted players ".TextFormat::WHITE."(".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1.).")\n";
-					$output .= implode(", ", $list);
+					$output .= implode(", ", $product);
+					if($timelimited) $output .= "\nNote: If there is a number X in brackets next to a player's name, this player will be unmuted in X minute(s).";
 					$sender->sendMessage($output);
 					return true;
 				}
@@ -227,15 +248,11 @@ class Main extends PluginBase implements Listener{
 					}
 				}
 				if($option == "word"){
-					if(count($args) !== 0){
-						$sender->sendMessage("Usage: ".$command->getUsage());
-						return true;
-					}
 					$list = explode(",",$this->getConfig()->get("bannedwords"));
 					array_pop($list);
 					$output = TextFormat::AQUA."[RealMute] Banned words ".TextFormat::WHITE."(".(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1.).")\n";
 					$output .= implode(", ", $list);
-					$output .= TextFormat::GOLD."\nNote: ".TextFormat::WHITE."If a word begins with the exclamation mark, it will only be blocked if player sends it as an individual word.";
+					$output .= "\nNote: If a word begins with the exclamation mark, it will only be blocked if player sends it as an individual word.";
 					$sender->sendMessage($output);
 					return true;
 				}
@@ -254,14 +271,30 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 			case "rmute":
-				if(count($args) !== 1){
+				if(count($args) !== 1 && count($args) !== 2){
 					$sender->sendMessage("Usage: ".$command->getUsage());
 					return true;
 				}
 				$name = array_shift($args);
-				if(!$this->inList("mutedplayers", $name)){
+				if(!$this->inList("mutedplayers", $name)){	
+					if(count($args) == 1){
+						$time = intval(array_shift($args));
+						if($time > 0){
+							$now = time();
+							$unmutetime = $now + $time * 60;
+							if(!is_dir($this->getDataFolder()."players/".strtolower($name[0]))) mkdir($this->getDataFolder()."players/".strtolower($name[0]), 0777, true);
+							$timeconfig = new Config($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml", CONFIG::YAML);
+							$timeconfig->set("unmutetime", $unmutetime);
+							$timeconfig->save();
+							$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name." for ".$time." minute(s).");
+						}
+						else{
+							$sender->sendMessage("Usage: ".$command->getUsage());
+							return true;
+						}
+					}
+					else $sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name.".");
 					$this->add("mutedplayers", $name);
-					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name.".");
 					return true;
 				}
 				else{
@@ -320,9 +353,34 @@ class Main extends PluginBase implements Listener{
 			}
 		}
 		elseif($this->inList("mutedplayers", $player)){
-			$event->setCancelled(true);
-			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
-			return true;
+			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
+				$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+				$file = fopen($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml", "r");
+				fgets($file);
+				$unmutetime = fgets($file);
+				if($unmutetime[0] == "u"){ # Windows sucks on "unlink()", so the only way to check if the player has been timer-muted is to ckeck file contents rather than to check file existence
+					$unmutetime = substr($unmutetime, 11);
+					if($unmutetime > time()){
+						$event->setCancelled(true);
+						if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
+						return true;
+					}
+					else{
+						$this->remove("mutedplayers", $player);
+						return true;
+					}
+				}
+				else{
+					$event->setCancelled(true);
+					if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+					return true;
+				}
+			}
+			else{
+				$event->setCancelled(true);
+				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+				return true;
+			}
 		}
 		foreach(explode(",",$this->getConfig()->get("bannedwords")) as $bannedword){
 			if(strlen($bannedword)!== 0 && $bannedword[0] == "!"){
@@ -367,7 +425,7 @@ class Main extends PluginBase implements Listener{
 		$command = strtolower($event->getMessage());
 		if($this->getConfig()->get("banpm") == true && $this->inList("mutedplayers", $player) && substr($command, 0, 6) == "/tell "){
 			$event->setCancelled(true);
-			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages.");
+			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
 			return true;
 		}
 	}
@@ -403,6 +461,11 @@ class Main extends PluginBase implements Listener{
 		}
 		$this->getConfig()->set($opt, $newlist);
 		$this->getConfig()->save();
+		if(is_file($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml")){
+			$time = new Config($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml");
+			$time->setAll(array()); # Windows sucks on "unlink()", cannot use that method
+			$time->save();
+		}
 	}
 	protected function isOn($opt){
 		if($this->getConfig()->get($opt) == true) $text = TextFormat::GREEN."ON";

@@ -8,6 +8,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * Mute and unmute individual players in chat
 * Keep muting players even if they quit and join server again
 * Mute all players in chat
+* Time-limited mute
 * See list of muted players and status of the plugin
 * An optional function to notify muted players when they are sending messages
 * An optional function to keep allowing OPs sending messages while all players are muted
@@ -15,7 +16,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * Block and mute players if they send any prohibited contents set by administrator
 
 ## Usage
-* `/rmute <player>` Mute a player
+* `/rmute <player> [time]` Mute a player, you can specify time (in minutes) to use time-limited mute
 * `/runmute <player>` Unmute a player
 * `/muteall` Mute all players
 * `/unmuteall` Unmute all players
@@ -57,7 +58,7 @@ Default setting of those permissions is **OP**.
 * [x] Automatically mute players if they send any prohibited contents in chat
 * [x] Improve mechanism of checking contents that players send
 * [x] An optional function to ban private messages along with chat
-* [ ] Time-limited mute
+* [x] Time-limited mute
 * [ ] Automatically block players who send spam messages
 * [ ] Time-limitedly mute players who are automatically blocked by this plugin
 
