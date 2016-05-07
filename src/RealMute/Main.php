@@ -27,6 +27,7 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerCommandPreprocessEvent;
 use pocketmine\plugin\PluginBase;
+use pocketmine\scheduler\CallbackTask;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 
@@ -35,7 +36,7 @@ class Main extends PluginBase implements Listener{
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->getLogger()->notice("Copyright (C) 2016 Leo3418");
 		$this->getLogger()->notice("RealMute is free software licensed under GNU GPLv3 with the absence of any warranty");
-		@mkdir($this->getDataFolder());
+		if(!is_dir($this->getDataFolder())) mkdir($this->getDataFolder());
 		if(!is_dir($this->getDataFolder()."players")) mkdir($this->getDataFolder()."players", 0777, true);
 		$defaultconfig = array(
 			"version" => $this->getDescription()->getVersion(),
@@ -44,6 +45,8 @@ class Main extends PluginBase implements Listener{
 			"excludeop" => true,
 			"wordmute" => false,
 			"banpm" => false,
+			"banspam" => false,
+			"spamthreshold" => 1,
 			"mutedplayers" => "",
 			"bannedwords" => "",
 		);
@@ -79,6 +82,9 @@ class Main extends PluginBase implements Listener{
 		}
 		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
 		$this->getConfig()->save();
+		$this->lastmsgsender = "";
+		$this->lastmsgtime = "";
+		$this->getServer()->getScheduler()->scheduleRepeatingTask(new CallbackTask([$this,"checkTime"]),20);
 	}
 	public function onDisable(){
 		$this->getConfig()->save();
@@ -99,13 +105,15 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
+						$helpmsg .= TextFormat::GOLD."/realmute banspam ".TextFormat::WHITE."Turn on/off auto-muting players if they send spam messages\n";
+						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
 						$sender->sendMessage($helpmsg);
 						return true;
 					}
 					else{
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/2)"."\n";
 						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
-						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
+						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";						
 						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
 						$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
 						$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned-word list\n";
@@ -170,6 +178,37 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($option == "banspam"){
+					if($this->getConfig()->get("banspam") == false){
+						$this->getConfig()->set("banspam", true);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Players will be automatically muted if they send spam messages.");
+						return true;
+					}
+					else{
+						$this->getConfig()->set("banspam", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players will not muted if they send spam messages.");
+						return true;
+					}
+				}
+				if($option == "spamth"){
+					if(count($args) !== 1){
+						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
+						return true;
+					}
+					$threshold = intval(array_shift($args));
+					if($threshold >= 1 && $threshold <= 3){
+						$this->getConfig()->set("spamthreshold", $threshold);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set spam threshold to ".$threshold." second(s).");
+						return true;
+					}
+					else{
+						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
+						return true;
+					}
+				}
 				if($option == "status"){
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
@@ -177,6 +216,8 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Exclude OPs when muting all players: ".$this->isOn("excludeop")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
+					$status .= TextFormat::WHITE."Auto-mute players if they send spam messages: ".$this->isOn("banspam")."\n";
+					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
 					$status .= TextFormat::WHITE."Number of muted players: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
 					$status .= TextFormat::WHITE."Number of banned words: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1)."\n";
 					$sender->sendMessage($status);
@@ -188,26 +229,19 @@ class Main extends PluginBase implements Listener{
 					$product = array();
 					$timelimited = false;
 					foreach($list as $player){
-						$unmute = false;
 						if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
 							$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
 							$file = fopen($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml", "r");
 							fgets($file);
 							$unmutetime = fgets($file);
 							if($unmutetime[0] == "u"){ # Windows sucks on "unlink()", so the only way to check if the player has been timer-muted is to ckeck file contents rather than to check file existence
-								$unmutetime = substr($unmutetime, 11);
-								if($unmutetime > time()){
-									$timelimited = true;
-									$remaining = (ceil(($unmutetime - time())/60));
-									$player = $player."(".$remaining.")";
-								}
-								else{
-									$this->remove("mutedplayers", $player);
-									$unmute = true;
-								}
+							$timelimited = true;
+							$unmutetime = substr($unmutetime, 11);		
+							$remaining = (ceil(($unmutetime - time())/60));
+							$player = $player."(".$remaining.")";
 							}
 						}
-						if($unmute == false) $product[] = $player;
+						$product[] = $player;
 					}
 					$output = TextFormat::AQUA."[RealMute] Muted players ".TextFormat::WHITE."(".(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1.).")\n";
 					$output .= implode(", ", $product);
@@ -217,7 +251,7 @@ class Main extends PluginBase implements Listener{
 				}
 				if($option == "addword"){
 					if(count($args) !== 1){
-						$sender->sendMessage("Usage: ".$command->getUsage());
+						$sender->sendMessage("Usage: /realmute addword <word>");
 						return true;
 					}
 					$word = array_shift($args);
@@ -233,7 +267,7 @@ class Main extends PluginBase implements Listener{
 				}
 				if($option == "delword"){
 					if(count($args) !== 1){
-						$sender->sendMessage("Usage: ".$command->getUsage());
+						$sender->sendMessage("Usage: /realmute delword <word>");
 						return true;
 					}
 					$word = array_shift($args);
@@ -352,6 +386,18 @@ class Main extends PluginBase implements Listener{
 				return true;
 			}
 		}
+		elseif(!$this->inList("mutedplayers", $player) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
+			$event->setCancelled(true);
+			if($this->getConfig()->get("banspam") == true){
+				$this->add("mutedplayers", $player);
+				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Because you are sending spam messages, you are now muted in chat.");
+				$this->getLogger()->notice($player." sent spam messages in chat and has been muted automatically.");
+			}
+			$event->getPlayer()->sendMessage(TextFormat::RED."Do not send spam messages.");
+			$this->lastmsgsender = $player;
+			$this->lastmsgtime = time();
+			return true;
+		}
 		elseif($this->inList("mutedplayers", $player)){
 			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
 				$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
@@ -360,27 +406,14 @@ class Main extends PluginBase implements Listener{
 				$unmutetime = fgets($file);
 				if($unmutetime[0] == "u"){ # Windows sucks on "unlink()", so the only way to check if the player has been timer-muted is to ckeck file contents rather than to check file existence
 					$unmutetime = substr($unmutetime, 11);
-					if($unmutetime > time()){
-						$event->setCancelled(true);
-						if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
-						return true;
-					}
-					else{
-						$this->remove("mutedplayers", $player);
-						return true;
-					}
-				}
-				else{
 					$event->setCancelled(true);
-					if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+					if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
 					return true;
 				}
 			}
-			else{
-				$event->setCancelled(true);
-				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
-				return true;
-			}
+			$event->setCancelled(true);
+			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+			return true;
 		}
 		foreach(explode(",",$this->getConfig()->get("bannedwords")) as $bannedword){
 			if(strlen($bannedword)!== 0 && $bannedword[0] == "!"){
@@ -419,6 +452,8 @@ class Main extends PluginBase implements Listener{
 				}
 			}
 		}
+		$this->lastmsgsender = $player;
+		$this->lastmsgtime = time();
 	}
 	public function onPlayerCommand(PlayerCommandPreprocessEvent $event){
 		$player = $event->getPlayer()->getName();
@@ -463,7 +498,7 @@ class Main extends PluginBase implements Listener{
 		$this->getConfig()->save();
 		if(is_file($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml")){
 			$time = new Config($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml");
-			$time->setAll(array()); # Windows sucks on "unlink()", cannot use that method
+			$time->remove("unmutetime"); # Windows sucks on "unlink()", cannot use that method
 			$time->save();
 		}
 	}
@@ -471,6 +506,26 @@ class Main extends PluginBase implements Listener{
 		if($this->getConfig()->get($opt) == true) $text = TextFormat::GREEN."ON";
 		else $text = TextFormat::YELLOW."OFF";
 		return $text;
+	}
+	public function checkTime(){
+		$list = explode(",",$this->getConfig()->get("mutedplayers"));
+		array_pop($list);
+		foreach($list as $player){
+			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
+				$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+				$file = fopen($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml", "r");
+				fgets($file);
+				$unmutetime = fgets($file);
+				if($unmutetime[0] == "u"){ # Windows sucks on "unlink()", so the only way to check if the player has been timer-muted is to ckeck file contents rather than to check file existence
+					$unmutetime = substr($unmutetime, 11);
+					if($unmutetime < time()){
+						$this->remove("mutedplayers", $player);
+						return true;
+					}
+					else return false;	
+				}
+			}
+		}
 	}
 }
 ?>

@@ -9,6 +9,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * Keep muting players even if they quit and join server again
 * Mute all players in chat
 * Time-limited mute
+* Block and mute(optional) players who send spam messages
 * See list of muted players and status of the plugin
 * An optional function to notify muted players when they are sending messages
 * An optional function to keep allowing OPs sending messages while all players are muted
@@ -25,6 +26,8 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * `/realmute muteop` Include/Exclude OPs from muting all players
 * `/realmute wordmute` Turn on/off auto-muting players if they send banned words
 * `/realmute banpm` Turn on/off blocking private messages from muted players
+* `/realmute banspam` Turn on/off auto-muting players if they send spam messages
+* `/realmute spamth <time>` Specify spam threshold in seconds (If players sends consecutive messages within this time interval, they will be blocked)
 * `/realmute addword <word>` Add a keyword to banned word list
 * `/realmute delword <word>` Delete a keyword from banned word list
 * `/realmute status` View current status of this plugin
@@ -40,6 +43,8 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
 | Exclude OPs from muting all players | ON |
 | Auto-mute players if they send banned words | OFF |
 | Blocking muted players private messages | OFF |
+| Auto-mute players if they send spam messages | OFF |
+| Spam threshold | 1 second |
 
 ## Permissions
 * `realmute` Allows all RealMute commands
@@ -59,7 +64,7 @@ Default setting of those permissions is **OP**.
 * [x] Improve mechanism of checking contents that players send
 * [x] An optional function to ban private messages along with chat
 * [x] Time-limited mute
-* [ ] Automatically block players who send spam messages
+* [x] Automatically block players who send spam messages
 * [ ] Time-limitedly mute players who are automatically blocked by this plugin
 
 ## License
