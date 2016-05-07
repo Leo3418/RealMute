@@ -10,11 +10,11 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * Mute all players in chat
 * Time-limited mute
 * Block and mute(optional) players who send spam messages
-* See list of muted players and status of the plugin
-* An optional function to notify muted players when they are sending messages
-* An optional function to keep allowing OPs sending messages while all players are muted
-* An optional function to block players' private messages alongside chat messages
 * Block and mute players if they send any prohibited contents set by administrator
+* An optional function to block players' private messages alongside chat messages
+* An optional function to keep allowing OPs sending messages while all players are muted
+* An optional function to notify muted players when they are sending messages
+* See list of muted players and status of the plugin
 
 ## Usage
 * `/rmute <player> [time]` Mute a player, you can specify time (in minutes) to use time-limited mute
@@ -42,7 +42,7 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
 | Notification to muted players | OFF |
 | Exclude OPs from muting all players | ON |
 | Auto-mute players if they send banned words | OFF |
-| Blocking muted players private messages | OFF |
+| Blocking muted players' private messages | OFF |
 | Auto-mute players if they send spam messages | OFF |
 | Spam threshold | 1 second |
 
@@ -65,6 +65,7 @@ Default setting of those permissions is **OP**.
 * [x] An optional function to ban private messages along with chat
 * [x] Time-limited mute
 * [x] Automatically block players who send spam messages
+* [ ] Make muting players who send banned words optional
 * [ ] Time-limitedly mute players who are automatically blocked by this plugin
 
 ## License
