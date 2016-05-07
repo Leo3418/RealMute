@@ -65,7 +65,6 @@ Default setting of those permissions is **OP**.
 * [x] An optional function to ban private messages along with chat
 * [x] Time-limited mute
 * [x] Automatically block players who send spam messages
-* [ ] Make muting players who send banned words optional
 * [ ] Time-limitedly mute players who are automatically blocked by this plugin
 
 ## License
