@@ -47,6 +47,7 @@ class Main extends PluginBase implements Listener{
 			"banpm" => false,
 			"banspam" => false,
 			"spamthreshold" => 1,
+			"automutetime" => false,
 			"mutedplayers" => "",
 			"bannedwords" => "",
 		);
@@ -84,6 +85,7 @@ class Main extends PluginBase implements Listener{
 		$this->getConfig()->save();
 		$this->lastmsgsender = "";
 		$this->lastmsgtime = "";
+		$this->consecutivemsg = 1;
 		$this->getServer()->getScheduler()->scheduleRepeatingTask(new CallbackTask([$this,"checkTime"]),20);
 	}
 	public function onDisable(){
@@ -112,6 +114,7 @@ class Main extends PluginBase implements Listener{
 					}
 					else{
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/2)"."\n";
+						$helpmsg .= TextFormat::GOLD."/realmute amtime <time in minutes> ".TextFormat::WHITE."Set time limit of auto-mute, set 0 to disable\n";
 						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
 						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";						
 						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
@@ -209,6 +212,29 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($option == "amtime"){
+					if(count($args) !== 1){
+						$sender->sendMessage("Usage: /realmute amtime <time in minutes>\nSet 0 to disable");
+						return true;
+					}
+					$time = intval(array_shift($args));
+					if($time > 0){
+						$this->getConfig()->set("automutetime", $time);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set time limit of auto-mute to ".$time." minute(s).");
+						return true;
+					}
+					elseif($time == 0){
+						$this->getConfig()->set("automutetime", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Auto-mute will not time-limitedly mute players.");
+						return true;
+					}
+					else{
+						$sender->sendMessage("Usage: /realmute amtime <time in minutes>\nSet 0 to disable");
+						return true;
+					}
+				}
 				if($option == "status"){
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
@@ -218,6 +244,8 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send spam messages: ".$this->isOn("banspam")."\n";
 					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
+					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
+					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
 					$status .= TextFormat::WHITE."Number of muted players: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
 					$status .= TextFormat::WHITE."Number of banned words: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1)."\n";
 					$sender->sendMessage($status);
@@ -314,12 +342,7 @@ class Main extends PluginBase implements Listener{
 					if(count($args) == 1){
 						$time = intval(array_shift($args));
 						if($time > 0){
-							$now = time();
-							$unmutetime = $now + $time * 60;
-							if(!is_dir($this->getDataFolder()."players/".strtolower($name[0]))) mkdir($this->getDataFolder()."players/".strtolower($name[0]), 0777, true);
-							$timeconfig = new Config($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml", CONFIG::YAML);
-							$timeconfig->set("unmutetime", $unmutetime);
-							$timeconfig->save();
+							$this->tmMute($name, $time);
 							$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name." for ".$time." minute(s).");
 						}
 						else{
@@ -387,15 +410,23 @@ class Main extends PluginBase implements Listener{
 			}
 		}
 		elseif(!$this->inList("mutedplayers", $player) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
+			if($this->consecutivemsg < 3){
+				$this->lastmsgsender = $player;
+				$this->lastmsgtime = time();
+				$this->consecutivemsg += 1;
+				return true;
+			}
 			$event->setCancelled(true);
 			if($this->getConfig()->get("banspam") == true){
 				$this->add("mutedplayers", $player);
+				if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 				if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Because you are sending spam messages, you are now muted in chat.");
 				$this->getLogger()->notice($player." sent spam messages in chat and has been muted automatically.");
 			}
 			$event->getPlayer()->sendMessage(TextFormat::RED."Do not send spam messages.");
 			$this->lastmsgsender = $player;
 			$this->lastmsgtime = time();
+			$this->consecutivemsg = 1;
 			return true;
 		}
 		elseif($this->inList("mutedplayers", $player)){
@@ -425,6 +456,7 @@ class Main extends PluginBase implements Listener{
 							if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
 							else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 							$this->add("mutedplayers", $player);
+							if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 							$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 							return true;
 							break;
@@ -442,6 +474,7 @@ class Main extends PluginBase implements Listener{
 						if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
 						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 						$this->add("mutedplayers", $player);
+						if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 						$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 						return true;
 						break;
@@ -454,6 +487,7 @@ class Main extends PluginBase implements Listener{
 		}
 		$this->lastmsgsender = $player;
 		$this->lastmsgtime = time();
+		$this->consecutivemsg = 1;
 	}
 	public function onPlayerCommand(PlayerCommandPreprocessEvent $event){
 		$player = $event->getPlayer()->getName();
@@ -506,6 +540,15 @@ class Main extends PluginBase implements Listener{
 		if($this->getConfig()->get($opt) == true) $text = TextFormat::GREEN."ON";
 		else $text = TextFormat::YELLOW."OFF";
 		return $text;
+	}
+	protected function tmMute($name, $time){
+		$now = time();
+		$unmutetime = $now + $time * 60;
+		if(!is_dir($this->getDataFolder()."players/".strtolower($name[0]))) mkdir($this->getDataFolder()."players/".strtolower($name[0]), 0777, true);
+		$timeconfig = new Config($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml", CONFIG::YAML);
+		$timeconfig->set("unmutetime", $unmutetime);
+		$timeconfig->save();
+		return true;
 	}
 	public function checkTime(){
 		$list = explode(",",$this->getConfig()->get("mutedplayers"));
