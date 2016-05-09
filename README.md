@@ -60,7 +60,8 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
   * `realmute.mute` Allows muting individual players
   * `realmute.unmute` Allows unmuting individual players
   * `realmute.muteall` Allows muting all players
-  * `realmute.unmuteall` Allows unmuting individual players  
+  * `realmute.unmuteall` Allows unmuting individual players
+
 Default setting of those permissions is **OP**.
 
 ## Future Plan
