@@ -11,6 +11,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * Time-limited mute
 * Block and mute(optional) players who send spam messages
 * Block and mute(optional) players if they send any prohibited contents set by administrator
+* An optional function to disallow muted players to use signs
 * An optional function to block players' private messages alongside chat messages
 * An optional function to keep allowing OPs sending messages while all players are muted
 * An optional function to notify muted players when they are sending messages
@@ -28,6 +29,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * `/realmute wordmute` Turn on/off auto-muting players if they send banned words
 * `/realmute banpm` Turn on/off blocking private messages from muted players
 * `/realmute banspam` Turn on/off auto-muting players if they send spam messages
+* `/realmute bansign` Allow/Disallow muted players to use signs
 * `/realmute spamth <time>` Specify spam threshold in seconds (If players sends consecutive messages within this time interval, they will be blocked)
 * `/realmute amtime <time>` Set time limit(in minutes) of auto-mute, set 0 to disable
 * `/realmute addword <word>` Add a keyword to banned word list
@@ -48,6 +50,7 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
 | Auto-mute players if they send spam messages | OFF |
 | Spam threshold | 1 second |
 | Time limit of auto-mute | OFF |
+| Muted players cannot use signs | OFF |
 
 ## Permissions
 * `realmute` Allows all RealMute commands

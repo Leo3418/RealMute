@@ -24,6 +24,7 @@ use pocketmine\Server;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\event\Listener;
+use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerCommandPreprocessEvent;
 use pocketmine\plugin\PluginBase;
@@ -46,6 +47,7 @@ class Main extends PluginBase implements Listener{
 			"wordmute" => false,
 			"banpm" => false,
 			"banspam" => false,
+			"bansign" => false,
 			"spamthreshold" => 1,
 			"automutetime" => false,
 			"mutedplayers" => "",
@@ -108,6 +110,7 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banspam ".TextFormat::WHITE."Turn on/off auto-muting players if they send spam messages\n";
+						$helpmsg .= TextFormat::GOLD."/realmute bansign ".TextFormat::WHITE."Allow/Disallow muted players to use signs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
 						$sender->sendMessage($helpmsg);
 						return true;
@@ -195,6 +198,20 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($option == "bansign"){
+					if($this->getConfig()->get("bansign") == false){
+						$this->getConfig()->set("bansign", true);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Muted players cannot use signs.");
+						return true;
+					}
+					else{
+						$this->getConfig()->set("bansign", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players are allowed to use signs.");
+						return true;
+					}
+				}
 				if($option == "spamth"){
 					if(count($args) !== 1){
 						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
@@ -243,6 +260,7 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send spam messages: ".$this->isOn("banspam")."\n";
+					$status .= TextFormat::WHITE."Muted players cannot use signs: ".$this->isOn("bansign")."\n";
 					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
 					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
 					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
@@ -495,6 +513,14 @@ class Main extends PluginBase implements Listener{
 		if($this->getConfig()->get("banpm") == true && $this->inList("mutedplayers", $player) && substr($command, 0, 6) == "/tell "){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
+			return true;
+		}
+	}
+	public function onPlaceEvent(BlockPlaceEvent $event){
+		$player = $event->getPlayer()->getName();
+		if($this->inList("mutedplayers", $player) && $this->getConfig()->get("bansign") == true && ($event->getBlock()->getID() == 323 || $event->getBlock()->getID() == 63 || $event->getBlock()->getID() == 68)){
+			$event->setCancelled(true);
+			if($this->getConfig()->get("notification") == true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to use signs until you get unmuted in chat.");
 			return true;
 		}
 	}
