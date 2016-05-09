@@ -34,9 +34,9 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * `/realmute amtime <time>` Set time limit(in minutes) of auto-mute, set 0 to disable
 * `/realmute addword <word>` Add a keyword to banned word list
 * `/realmute delword <word>` Delete a keyword from banned word list
-* `/realmute word` Show the banned-word list
 * `/realmute status` View current status of this plugin
 * `/realmute list` List muted players
+* `/realmute word` Show the banned-word list
 * `/realmute about` Show information about this plugin  
 Note on muting/unmuting players: Player name is not case-sensitive.  
 Note on adding keywords: You can add an exclamation mark before the word if you want to match the whole word only. For example, if you add **!bo**, **boy** will not be blocked, but **bo y** will be blocked.
