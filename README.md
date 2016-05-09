@@ -34,6 +34,7 @@ Because of changes of internal mechanisms of muting players, the **config.yml** 
 * `/realmute amtime <time>` Set time limit(in minutes) of auto-mute, set 0 to disable
 * `/realmute addword <word>` Add a keyword to banned word list
 * `/realmute delword <word>` Delete a keyword from banned word list
+* `/realmute word` Show the banned-word list
 * `/realmute status` View current status of this plugin
 * `/realmute list` List muted players
 * `/realmute about` Show information about this plugin  
@@ -59,8 +60,7 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
   * `realmute.mute` Allows muting individual players
   * `realmute.unmute` Allows unmuting individual players
   * `realmute.muteall` Allows muting all players
-  * `realmute.unmuteall` Allows unmuting individual players
-
+  * `realmute.unmuteall` Allows unmuting individual players  
 Default setting of those permissions is **OP**.
 
 ## Future Plan
