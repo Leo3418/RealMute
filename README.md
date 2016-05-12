@@ -1,6 +1,9 @@
 # RealMute: A PocketMine chat management plugin by Leo3418
 RealMute is a plugin that allows administrator to mute players in chat. 
 
+> This plugin will not be updated anymore unless there is a bug or an issue needed to fix, or I come up with any new feature.  
+> Please feel free to open an issue if you find any problem, or send a pull request when you have any suggestion or idea to this plugin.
+
 ## Upgrading from version 1.x?
 Because of changes of internal mechanisms of muting players, the **config.yml** will be automatically updated to v2.x format.
 
@@ -64,18 +67,6 @@ Note on adding keywords: You can add an exclamation mark before the word if you 
   * `realmute.unmuteall` Allows unmuting individual players
 
 Default setting of those permissions is **OP**.
-
-## Future Plan
-All done! This plugin will not be updated anymore unless there is a bug or an issue needed to fix, or I come up with any new feature.  
-Please feel free to open an issue if you find any problem, or send a pull request when you have any suggestion or idea to this plugin.  
-* [x] An optional function to exclude OPs in muting all players
-* [x] See all muted players and settings of this plugin
-* [x] Automatically mute players if they send any prohibited contents in chat
-* [x] Improve mechanism of checking contents that players send
-* [x] An optional function to ban private messages along with chat
-* [x] Time-limited mute
-* [x] Automatically block players who send spam messages
-* [x] Time-limitedly mute players who are automatically blocked by this plugin
 
 ## License
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  
