@@ -589,9 +589,7 @@ class Main extends PluginBase implements Listener{
 					$unmutetime = substr($unmutetime, 11);
 					if($unmutetime < time()){
 						$this->remove("mutedplayers", $player);
-						return true;
 					}
-					else return false;	
 				}
 			}
 		}
