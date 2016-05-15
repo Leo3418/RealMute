@@ -428,7 +428,7 @@ class Main extends PluginBase implements Listener{
 			}
 		}
 		elseif(!$this->inList("mutedplayers", $player) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
-			if($this->consecutivemsg < 3){
+			if($this->consecutivemsg < 2){
 				$this->lastmsgsender = $player;
 				$this->lastmsgtime = time();
 				$this->consecutivemsg += 1;
@@ -444,7 +444,6 @@ class Main extends PluginBase implements Listener{
 			$event->getPlayer()->sendMessage(TextFormat::RED."Do not send spam messages.");
 			$this->lastmsgsender = $player;
 			$this->lastmsgtime = time();
-			$this->consecutivemsg = 1;
 			return true;
 		}
 		elseif($this->inList("mutedplayers", $player)){
