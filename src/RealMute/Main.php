@@ -27,8 +27,8 @@ use pocketmine\event\Listener;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerCommandPreprocessEvent;
+use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\plugin\PluginBase;
-use pocketmine\scheduler\CallbackTask;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 
@@ -42,32 +42,35 @@ class Main extends PluginBase implements Listener{
 		$defaultconfig = array(
 			"version" => $this->getDescription()->getVersion(),
 			"muteall" => false,
-			"notification" => false,
+			"notification" => true,
 			"excludeop" => true,
 			"wordmute" => false,
 			"banpm" => false,
 			"banspam" => false,
 			"bansign" => false,
+			"muteuuidip" => false,
 			"spamthreshold" => 1,
 			"automutetime" => false,
 			"mutedplayers" => "",
 			"bannedwords" => "",
 		);
-		if(file_exists($this->getDataFolder()."config.yml") && strcmp("2", $this->getConfig()->get("version")[0]) < 0){
+		if(file_exists($this->getDataFolder()."config.yml") && strcmp("3", $this->getConfig()->get("version")[0]) < 0){
 			copy($this->getDataFolder()."config.yml", $this->getDataFolder()."config.bak");
 			$this->getConfig()->setAll($defaultconfig);
 			$this->getLogger()->warning("Your config.yml is for a higher version of RealMute.");
-			$this->getLogger()->warning("config.yml has been downgraded to version 2.x. Old file was renamed to config.bak.");
+			$this->getLogger()->warning("config.yml has been downgraded to version 3.x. Old file was renamed to config.bak.");
 		}
+		$ver2 = false;
+		if(file_exists($this->getDataFolder()."config.yml") && strcmp("2", $this->getConfig()->get("version")[0]) == 0) $ver2 = true;
 		if(file_exists($this->getDataFolder()."config.yml") && strcmp($this->getConfig()->get("version"), $this->getDescription()->getVersion()) !== 0) $this->getConfig()->set("version", $this->getDescription()->getVersion());
 		if(file_exists($this->getDataFolder()."config.yml")){
 			$config = fopen($this->getDataFolder()."config.yml", "r");
-			$oldVersion = false;
+			$ver1 = false;
 			$copied = false;
 			while(!feof($config)){
 				$line = fgets($config);
 				if(strpos($line, ".mute")){
-					$oldVersion = true;
+					$ver1 = true;
 					while(!$copied){
 						copy($this->getDataFolder()."config.yml", $this->getDataFolder()."config.bak");
 						$copied = true;
@@ -78,13 +81,21 @@ class Main extends PluginBase implements Listener{
 					$this->add("mutedplayers", $name);
 				}
 			}
-			if($oldVersion){
+			if($ver1){
 				$this->getLogger()->info("An old version of config.yml detected. Old file was renamed to config.bak.");
-				$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 2.x!");
+				$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 3.x!");
+			}
+			if($ver2) {
+				$this->getLogger()->warning("If you want to downgrade RealMute back to version 2.x, please make sure you use v2.7.5 or v2.0.x-2.3.x.");
+				$this->getLogger()->warning("You can download version 2.7.5 at https://github.com/Leo3418/RealMute/releases/tag/v2.7.5");
 			}
 		}
 		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
 		$this->getConfig()->save();
+		if($this->getServer()->getApiVersion() == "2.0.0") $this->supportuuid = true;
+		else $this->supportuuid = false;
+		$this->identity = new Config($this->getDataFolder()."identity.txt", Config::ENUM);
+		$this->identity->save();
 		$this->lastmsgsender = "";
 		$this->lastmsgtime = "";
 		$this->consecutivemsg = 1;
@@ -92,6 +103,14 @@ class Main extends PluginBase implements Listener{
 	}
 	public function onDisable(){
 		$this->getConfig()->save();
+		$this->identity->save();
+	}
+	public function onJoin(PlayerJoinEvent $event){
+		$player = $event->getPlayer()->getName();
+		$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+		if($this->supportuuid) $userconfig->set("uuid", strval($event->getPlayer()->getUniqueId()));
+		else $userconfig->set("ip", strval($event->getPlayer()->getAddress()));
+		$userconfig->save();
 	}
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args){
 		switch($command->getName()){
@@ -111,12 +130,14 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banspam ".TextFormat::WHITE."Turn on/off auto-muting players if they send spam messages\n";
 						$helpmsg .= TextFormat::GOLD."/realmute bansign ".TextFormat::WHITE."Allow/Disallow muted players to use signs\n";
-						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
+						if($this->supportuuid) $helpmsg .= TextFormat::GOLD."/realmute mutedevice ".TextFormat::WHITE."Turn on/off muting players' devices alongside usernames\n";
+						else $helpmsg .= TextFormat::GOLD."/realmute muteip ".TextFormat::WHITE."Turn on/off muting players' IPs alongside usernames\n";
 						$sender->sendMessage($helpmsg);
 						return true;
 					}
 					else{
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/2)"."\n";
+						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
 						$helpmsg .= TextFormat::GOLD."/realmute amtime <time in minutes> ".TextFormat::WHITE."Set time limit of auto-mute, set 0 to disable\n";
 						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
 						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";						
@@ -212,6 +233,34 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($this->supportuuid && $option == "mutedevice"){
+					if($this->getConfig()->get("muteuuidip") == false){
+						$this->getConfig()->set("muteuuidip", true);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] When muting a username, corresponding device will also be muted.");
+						return true;
+					}
+					else{
+						$this->getConfig()->set("muteuuidip", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players' devices will not be muted.");
+						return true;
+					}
+				}
+				if(!$this->supportuuid && $option == "muteip"){
+					if($this->getConfig()->get("muteuuidip") == false){
+						$this->getConfig()->set("muteuuidip", true);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] When muting a username, corresponding IP will also be muted.");
+						return true;
+					}
+					else{
+						$this->getConfig()->set("muteuuidip", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players' IPs will not be muted.");
+						return true;
+					}
+				}
 				if($option == "spamth"){
 					if(count($args) !== 1){
 						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
@@ -261,6 +310,8 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send spam messages: ".$this->isOn("banspam")."\n";
 					$status .= TextFormat::WHITE."Muted players cannot use signs: ".$this->isOn("bansign")."\n";
+					if($this->supportuuid) $status .= TextFormat::WHITE."Mute devices alongside usernames: ".$this->isOn("muteuuidip")."\n";
+					else $status .= TextFormat::WHITE."Mute IPs alongside usernames: ".$this->isOn("muteuuidip")."\n";
 					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
 					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
 					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
@@ -276,10 +327,10 @@ class Main extends PluginBase implements Listener{
 					$timelimited = false;
 					foreach($list as $player){
 						if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
-							$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
-							if($timeconfig->get("unmutetime") != false){
+							$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+							if($userconfig->get("unmutetime") != false){
 								$timelimited = true;
-								$unmutetime = $timeconfig->get("unmutetime");		
+								$unmutetime = $userconfig->get("unmutetime");		
 								$remaining = (ceil(($unmutetime - time())/60));
 								$player = $player."(".$remaining.")";
 							}
@@ -367,6 +418,7 @@ class Main extends PluginBase implements Listener{
 					}
 					else $sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully muted ".$name.".");
 					$this->add("mutedplayers", $name);
+					$this->addIdentity($name);
 					return true;
 				}
 				else{
@@ -381,6 +433,7 @@ class Main extends PluginBase implements Listener{
 				$name = array_shift($args);
 				if($this->inList("mutedplayers", $name)){
 					$this->remove("mutedplayers", $name);
+					$this->removeIdentity($name);
 					$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully unmuted ".$name.".");
 					return true;
 				}
@@ -416,6 +469,16 @@ class Main extends PluginBase implements Listener{
 	public function onPlayerChat(PlayerChatEvent $event){
 		$player = $event->getPlayer()->getName();
 		$message = $event->getMessage();
+		$mutedidentity = $this->identity->getAll(true);
+		if($this->supportuuid){
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			$useridentity = $userconfig->get("uuid");
+		}
+		else{
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			$useridentity = $userconfig->get("ip");
+		}
+		
 		if($this->getConfig()->get("muteall")){
 			if($this->getConfig()->get("excludeop") && $event->getPlayer()->hasPermission("realmute.muteignored")) return true;
 			else{
@@ -424,7 +487,7 @@ class Main extends PluginBase implements Listener{
 				return true;
 			}
 		}
-		elseif(!$this->inList("mutedplayers", $player) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
+		elseif((!$this->inList("mutedplayers", $player) || !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
 			if($this->consecutivemsg < 2){
 				$this->lastmsgsender = $player;
 				$this->lastmsgtime = time();
@@ -443,11 +506,11 @@ class Main extends PluginBase implements Listener{
 			$this->lastmsgtime = time();
 			return true;
 		}
-		elseif($this->inList("mutedplayers", $player)){
+		elseif($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))){
 			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
-				$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
-				if($timeconfig->get("unmutetime") != false){
-					$unmutetime = $timeconfig->get("unmutetime");
+				$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+				if($userconfig->get("unmutetime") != false){
+					$unmutetime = $userconfig->get("unmutetime");
 					$event->setCancelled(true);
 					if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
 					return true;
@@ -467,6 +530,7 @@ class Main extends PluginBase implements Listener{
 							if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
 							else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 							$this->add("mutedplayers", $player);
+							$this->addIdentity($player);
 							if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 							$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 							return true;
@@ -485,6 +549,7 @@ class Main extends PluginBase implements Listener{
 						if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
 						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 						$this->add("mutedplayers", $player);
+						$this->addIdentity($player);
 						if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 						$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 						return true;
@@ -503,7 +568,7 @@ class Main extends PluginBase implements Listener{
 	public function onPlayerCommand(PlayerCommandPreprocessEvent $event){
 		$player = $event->getPlayer()->getName();
 		$command = strtolower($event->getMessage());
-		if($this->getConfig()->get("banpm") && $this->inList("mutedplayers", $player) && substr($command, 0, 6) == "/tell "){
+		if($this->getConfig()->get("banpm") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))) && substr($command, 0, 6) == "/tell "){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
 			return true;
@@ -511,7 +576,7 @@ class Main extends PluginBase implements Listener{
 	}
 	public function onPlaceEvent(BlockPlaceEvent $event){
 		$player = $event->getPlayer()->getName();
-		if($this->inList("mutedplayers", $player) && $this->getConfig()->get("bansign") && ($event->getBlock()->getID() == 323 || $event->getBlock()->getID() == 63 || $event->getBlock()->getID() == 68)){
+		if($this->getConfig()->get("bansign") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))) && ($event->getBlock()->getID() == 323 || $event->getBlock()->getID() == 63 || $event->getBlock()->getID() == 68)){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to use signs until you get unmuted in chat.");
 			return true;
@@ -555,6 +620,34 @@ class Main extends PluginBase implements Listener{
 			$time->save();
 		}
 	}
+	protected function addIdentity($player){
+		if($this->getConfig()->get("muteuuidip")){
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			if($this->supportuuid){
+				$uuid = $userconfig->get("uuid");
+				$this->identity->set($uuid);
+			}
+			else{
+				$ip = $userconfig->get("ip");
+				$this->identity->set($ip);
+			}
+			$this->identity->save();
+		}
+	}
+	protected function removeIdentity($player){
+		if($this->getConfig()->get("muteuuidip")){
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			if($this->supportuuid){
+				$uuid = $userconfig->get("uuid");
+				$this->identity->remove($uuid);
+			}
+			else{
+				$ip = $userconfig->get("ip");
+				$this->identity->remove($ip);
+			}
+			$this->identity->save();
+		}
+	}
 	protected function isOn($opt){
 		if($this->getConfig()->get($opt)) $text = TextFormat::GREEN."ON";
 		else $text = TextFormat::YELLOW."OFF";
@@ -564,9 +657,9 @@ class Main extends PluginBase implements Listener{
 		$now = time();
 		$unmutetime = $now + $time * 60;
 		if(!is_dir($this->getDataFolder()."players/".strtolower($name[0]))) mkdir($this->getDataFolder()."players/".strtolower($name[0]), 0777, true);
-		$timeconfig = new Config($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml", CONFIG::YAML);
-		$timeconfig->set("unmutetime", $unmutetime);
-		$timeconfig->save();
+		$userconfig = new Config($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml", CONFIG::YAML);
+		$userconfig->set("unmutetime", $unmutetime);
+		$userconfig->save();
 		return true;
 	}
 	public function checkTime(){
@@ -574,11 +667,12 @@ class Main extends PluginBase implements Listener{
 		array_pop($list);
 		foreach($list as $player){
 			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
-				$timeconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
-				if($timeconfig->get("unmutetime") != false){
-					$unmutetime = $timeconfig->get("unmutetime");
+				$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+				if($userconfig->get("unmutetime") != false){
+					$unmutetime = $userconfig->get("unmutetime");
 					if($unmutetime < time()){
 						$this->remove("mutedplayers", $player);
+						$this->removeIdentity($player);
 					}
 				}
 			}
