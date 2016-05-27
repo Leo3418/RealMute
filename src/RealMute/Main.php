@@ -478,7 +478,6 @@ class Main extends PluginBase implements Listener{
 			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
 			$useridentity = $userconfig->get("ip");
 		}
-		
 		if($this->getConfig()->get("muteall")){
 			if($this->getConfig()->get("excludeop") && $event->getPlayer()->hasPermission("realmute.muteignored")) return true;
 			else{
@@ -568,6 +567,15 @@ class Main extends PluginBase implements Listener{
 	public function onPlayerCommand(PlayerCommandPreprocessEvent $event){
 		$player = $event->getPlayer()->getName();
 		$command = strtolower($event->getMessage());
+		$mutedidentity = $this->identity->getAll(true);
+		if($this->supportuuid){
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			$useridentity = $userconfig->get("uuid");
+		}
+		else{
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			$useridentity = $userconfig->get("ip");
+		}
 		if($this->getConfig()->get("banpm") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))) && substr($command, 0, 6) == "/tell "){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
@@ -576,6 +584,15 @@ class Main extends PluginBase implements Listener{
 	}
 	public function onPlaceEvent(BlockPlaceEvent $event){
 		$player = $event->getPlayer()->getName();
+		$mutedidentity = $this->identity->getAll(true);
+		if($this->supportuuid){
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			$useridentity = $userconfig->get("uuid");
+		}
+		else{
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			$useridentity = $userconfig->get("ip");
+		}
 		if($this->getConfig()->get("bansign") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))) && ($event->getBlock()->getID() == 323 || $event->getBlock()->getID() == 63 || $event->getBlock()->getID() == 68)){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to use signs until you get unmuted in chat.");
