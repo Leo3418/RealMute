@@ -607,8 +607,8 @@ class Main extends PluginBase implements Listener{
 				break;
 			case "muteop":
 				$flag = "excludeop";
-				$turnonmsg = "OPs will be muted with all players.";
-				$turnoffmsg = "When muting all players, OPs will be excluded.";
+				$turnonmsg = "When muting all players, OPs will be excluded.";
+				$turnoffmsg = "OPs will be muted with all players.";
 				break;
 			case "wordmute":
 				$flag = "wordmute";
