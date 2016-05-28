@@ -107,7 +107,8 @@ class Main extends PluginBase implements Listener{
 	}
 	public function onJoin(PlayerJoinEvent $event){
 		$player = $event->getPlayer()->getName();
-		$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+		if(!is_dir($this->getDataFolder()."players/".strtolower($player[0]))) mkdir($this->getDataFolder()."players/".strtolower($player[0]), 0777, true);
+		$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml", Config::YAML);
 		if($this->supportuuid) $userconfig->set("uuid", strval($event->getPlayer()->getUniqueId()));
 		else $userconfig->set("ip", strval($event->getPlayer()->getAddress()));
 		$userconfig->save();
@@ -149,89 +150,9 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
-				if($option == "notify"){
-					if($this->getConfig()->get("notification") == false){
-						$this->getConfig()->set("notification", true);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Muted players will be notified when they are sending messages.");
-						return true;
-					}
-					else{
-						$this->getConfig()->set("notification", false);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players will not be notified.");
-						return true;
-					}
-				}
-				if($option == "muteop"){
-					if($this->getConfig()->get("excludeop")){
-						$this->getConfig()->set("excludeop", false);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] OPs will be muted with all players.");
-						return true;
-					}
-					else{
-						$this->getConfig()->set("excludeop", true);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] When muting all players, OPs will be excluded.");
-						return true;
-					}
-				}
-				if($option == "wordmute"){
-					if($this->getConfig()->get("wordmute") == false){
-						$this->getConfig()->set("wordmute", true);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Players will be automatically muted if they send banned words.");
-						return true;
-					}
-					else{
-						$this->getConfig()->set("wordmute", false);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players will not muted if they send banned words.");
-						return true;
-					}
-				}
-				if($option == "banpm"){
-					if($this->getConfig()->get("banpm") == false){
-						$this->getConfig()->set("banpm", true);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Private messages sent by muted players will be blocked.");
-						return true;
-					}
-					else{
-						$this->getConfig()->set("banpm", false);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players can send private messages when they are muted in chat.");
-						return true;
-					}
-				}
-				if($option == "banspam"){
-					if($this->getConfig()->get("banspam") == false){
-						$this->getConfig()->set("banspam", true);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Players will be automatically muted if they send spam messages.");
-						return true;
-					}
-					else{
-						$this->getConfig()->set("banspam", false);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players will not muted if they send spam messages.");
-						return true;
-					}
-				}
-				if($option == "bansign"){
-					if($this->getConfig()->get("bansign") == false){
-						$this->getConfig()->set("bansign", true);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::GREEN."[RealMute] Muted players cannot use signs.");
-						return true;
-					}
-					else{
-						$this->getConfig()->set("bansign", false);
-						$this->getConfig()->save();
-						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players are allowed to use signs.");
-						return true;
-					}
+				if($option == "notify" || $option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign"){
+					$this->toggle($option, $sender);
+					return true;
 				}
 				if($this->supportuuid && $option == "mutedevice"){
 					if($this->getConfig()->get("muteuuidip") == false){
@@ -506,14 +427,12 @@ class Main extends PluginBase implements Listener{
 			return true;
 		}
 		elseif($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))){
-			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
-				$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
-				if($userconfig->get("unmutetime") != false){
-					$unmutetime = $userconfig->get("unmutetime");
-					$event->setCancelled(true);
-					if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
-					return true;
-				}
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
+			if($userconfig->get("unmutetime") != false){
+				$unmutetime = $userconfig->get("unmutetime");
+				$event->setCancelled(true);
+				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
+				return true;
 			}
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
@@ -631,14 +550,14 @@ class Main extends PluginBase implements Listener{
 		}
 		$this->getConfig()->set($opt, $newlist);
 		$this->getConfig()->save();
-		if(is_file($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml")){
+		if($opt == "mutedplayers" && is_file($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml")){
 			$time = new Config($this->getDataFolder()."players/".strtolower($target[0])."/".strtolower($target).".yml");
 			$time->remove("unmutetime");
 			$time->save();
 		}
 	}
 	protected function addIdentity($player){
-		if($this->getConfig()->get("muteuuidip")){
+		if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml") && $this->getConfig()->get("muteuuidip")){
 			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
 			if($this->supportuuid){
 				$uuid = $userconfig->get("uuid");
@@ -679,6 +598,52 @@ class Main extends PluginBase implements Listener{
 		$userconfig->save();
 		return true;
 	}
+	protected function toggle($option, $sender){
+		switch($option){
+			case "notify":
+				$flag = "notification";
+				$turnonmsg = "Muted players will be notified when they are sending messages.";
+				$turnoffmsg = "Muted players will not be notified.";
+				break;
+			case "muteop":
+				$flag = "excludeop";
+				$turnonmsg = "OPs will be muted with all players.";
+				$turnoffmsg = "When muting all players, OPs will be excluded.";
+				break;
+			case "wordmute":
+				$flag = "wordmute";
+				$turnonmsg = "Players will be automatically muted if they send banned words.";
+				$turnoffmsg = "Players will not muted if they send banned words.";
+				break;
+			case "banpm":
+				$flag = "banpm";
+				$turnonmsg = "Private messages sent by muted players will be blocked.";
+				$turnoffmsg = "Players can send private messages when they are muted in chat.";
+				break;
+			case "banspam":
+				$flag = "banspam";
+				$turnonmsg = "Players will be automatically muted if they send spam messages.";
+				$turnoffmsg = "Players will not muted if they send spam messages.";
+				break;
+			case "bansign":
+				$flag = "bansign";
+				$turnonmsg = "Muted players cannot use signs.";
+				$turnoffmsg = "Muted players are allowed to use signs.";
+				break;
+		}
+		if($this->getConfig()->get($flag) == false){
+			$this->getConfig()->set($flag, true);
+			$this->getConfig()->save();
+			$sender->sendMessage(TextFormat::GREEN."[RealMute] ".$turnonmsg);
+			return true;
+		}
+		else{
+			$this->getConfig()->set($flag, false);
+			$this->getConfig()->save();
+			$sender->sendMessage(TextFormat::YELLOW."[RealMute] ".$turnoffmsg);
+			return true;
+		}
+	}
 	public function checkTime(){
 		$list = explode(",",$this->getConfig()->get("mutedplayers"));
 		array_pop($list);
@@ -694,6 +659,34 @@ class Main extends PluginBase implements Listener{
 				}
 			}
 		}
+	}
+	public function isMuted($player){
+		if($player instanceof Player) $name = $player->getName();
+		elseif(gettype($player) != "object" && is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")) $name = $player;
+		else return false;
+		return $this->inList("mutedplayers", $name);
+	}
+	public function mutePlayer($player){
+		if($player instanceof Player) $name = $player->getName();
+		elseif(gettype($player) != "object") $name = $player;
+		else return false;
+		if(!$this->inList("mutedplayers", $name)){
+			$this->add("mutedplayers", $name);
+			$this->addIdentity($name);
+			return true;
+		}
+		return false;
+	}
+	public function unmutePlayer($player){
+		if($player instanceof Player) $name = $player->getName();
+		elseif(gettype($player) != "object") $name = $player;
+		else return false;
+		if($this->inList("mutedplayers", $name)){
+			$this->remove("mutedplayers", $name);
+			$this->removeIdentity($name);
+			return true;
+		}
+		return false;
 	}
 }
 ?>
