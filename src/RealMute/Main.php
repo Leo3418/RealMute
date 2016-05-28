@@ -407,7 +407,7 @@ class Main extends PluginBase implements Listener{
 				return true;
 			}
 		}
-		elseif((!$this->inList("mutedplayers", $player) || !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
+		elseif((!$this->inList("mutedplayers", $player) && !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
 			if($this->consecutivemsg < 2){
 				$this->lastmsgsender = $player;
 				$this->lastmsgtime = time();
@@ -662,8 +662,15 @@ class Main extends PluginBase implements Listener{
 	}
 	public function isMuted($player){
 		if($player instanceof Player) $name = $player->getName();
-		elseif(gettype($player) != "object" && is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")) $name = $player;
+		elseif(gettype($player) != "object") $name = $player;
 		else return false;
+		$mutedidentity = $this->identity->getAll(true);
+		if(is_file($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml")){
+			$userconfig = new Config($this->getDataFolder()."players/".strtolower($name[0])."/".strtolower($name).".yml");
+			if($this->supportuuid) $useridentity = $userconfig->get("uuid");
+			else $useridentity = $userconfig->get("ip");
+			if($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity)) return true;
+		}
 		return $this->inList("mutedplayers", $name);
 	}
 	public function mutePlayer($player){
