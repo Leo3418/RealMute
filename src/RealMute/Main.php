@@ -495,7 +495,7 @@ class Main extends PluginBase implements Listener{
 			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
 			$useridentity = $userconfig->get("ip");
 		}
-		if($this->getConfig()->get("banpm") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))) && substr($command, 0, 6) == "/tell "){
+		if($this->getConfig()->get("banpm") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteuuidip") && in_array($useridentity, $mutedidentity))) && (substr($command, 0, 6) == "/tell " || substr($command, 0, 5) == "/msg " || substr($command, 0, 3) == "/m " || substr($command, 0, 9) == "/whisper ") || (!$this->getServer()->getPluginManager()->getPlugin("SWorld") && substr($command, 0, 3) == "/w ")){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
 			return true;
