@@ -47,10 +47,12 @@ class Main extends PluginBase implements Listener{
 			"wordmute" => false,
 			"banpm" => false,
 			"banspam" => false,
+			"banlengthy" => false,
 			"bansign" => false,
 			"muteidentity" => false,
 			"spamthreshold" => 1,
 			"automutetime" => false,
+			"lengthlimit" => false,
 			"mutedplayers" => "",
 			"bannedwords" => "",
 		);
@@ -122,26 +124,35 @@ class Main extends PluginBase implements Listener{
 				}
 				$option = array_shift($args);
 				if($option == "help"){
-					if(count($args) !== 1 || array_shift($args) == 1){
-						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 1/2)"."\n";
+					if(count($args) !== 1 || $args[0] == 1){
+						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 1/3)"."\n";
 						$helpmsg .= TextFormat::GOLD."/realmute help <page> ".TextFormat::WHITE."Jump to another page of Help\n";
 						$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
 						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banspam ".TextFormat::WHITE."Turn on/off auto-muting players if they send spam messages\n";
+						
+						$sender->sendMessage($helpmsg);
+						return true;
+					}
+					if($args[0] == 2){
+						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/3)"."\n";
+						$helpmsg .= TextFormat::GOLD."/realmute banlengthy ".TextFormat::WHITE."Turn on/off auto-muting players if their message exceeds length limit\n";
 						$helpmsg .= TextFormat::GOLD."/realmute bansign ".TextFormat::WHITE."Allow/Disallow muted players to use signs\n";
 						if($this->supportcid) $helpmsg .= TextFormat::GOLD."/realmute mutedevice ".TextFormat::WHITE."Turn on/off muting players' devices alongside usernames\n";
 						else $helpmsg .= TextFormat::GOLD."/realmute muteip ".TextFormat::WHITE."Turn on/off muting players' IPs alongside usernames\n";
+						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
+						$helpmsg .= TextFormat::GOLD."/realmute amtime <time in minutes> ".TextFormat::WHITE."Set time limit of auto-mute, set 0 to disable\n";
+						$helpmsg .= TextFormat::GOLD."/realmute length <number of characters> ".TextFormat::WHITE."Set length limit of chat messages, set 0 to disable\n";
 						$sender->sendMessage($helpmsg);
 						return true;
 					}
 					else{
-						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 2/2)"."\n";
-						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
-						$helpmsg .= TextFormat::GOLD."/realmute amtime <time in minutes> ".TextFormat::WHITE."Set time limit of auto-mute, set 0 to disable\n";
+						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 3/3)"."\n";
+						
 						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
-						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";						
+						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
 						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
 						$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
 						$helpmsg .= TextFormat::GOLD."/realmute word ".TextFormat::WHITE."Show the banned-word list\n";
@@ -150,7 +161,7 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
-				if($option == "notify" || $option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign"){
+				if($option == "notify" || $option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign" || $option == "banlengthy"){
 					$this->toggle($option, $sender);
 					return true;
 				}
@@ -222,6 +233,29 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
+				if($option == "length"){
+					if(count($args) !== 1){
+						$sender->sendMessage("Usage: /realmute length <number of characters>\nSet 0 to disable");
+						return true;
+					}
+					$length = intval(array_shift($args));
+					if($length > 0){
+						$this->getConfig()->set("lengthlimit", $length);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set length limit of message to ".$length." character(s).");
+						return true;
+					}
+					elseif($time == 0){
+						$this->getConfig()->set("lengthlimit", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Message length limit is removed.");
+						return true;
+					}
+					else{
+						$sender->sendMessage("Usage: /realmute length <number of characters>\nSet 0 to disable");
+						return true;
+					}
+				}
 				if($option == "status"){
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
@@ -230,12 +264,15 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send spam messages: ".$this->isOn("banspam")."\n";
+					$status .= TextFormat::WHITE."Auto-mute players if their message exceeds length limit: ".$this->isOn("banlengthy")."\n";
 					$status .= TextFormat::WHITE."Muted players cannot use signs: ".$this->isOn("bansign")."\n";
 					if($this->supportcid) $status .= TextFormat::WHITE."Mute devices alongside usernames: ".$this->isOn("muteidentity")."\n";
 					else $status .= TextFormat::WHITE."Mute IPs alongside usernames: ".$this->isOn("muteidentity")."\n";
 					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
 					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
 					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
+					if($this->getConfig()->get("lengthlimit") == false) $status .= TextFormat::WHITE."Length limit of chat messages: ".$this->isOn("lengthlimit")."\n";
+					else $status .= TextFormat::WHITE."Length limit of chat messages: ".TextFormat::AQUA.($this->getConfig()->get("lengthlimit"))." character(s)\n";
 					$status .= TextFormat::WHITE."Number of muted players: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("mutedplayers"))) - 1)."\n";
 					$status .= TextFormat::WHITE."Number of banned words: ".TextFormat::AQUA.(count(explode(",",$this->getConfig()->get("bannedwords"))) - 1)."\n";
 					$sender->sendMessage($status);
@@ -270,6 +307,10 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 					$word = array_shift($args);
+					if(stripos($word, ",") !== false){
+						$sender->sendMessage(TextFormat::RED."[RealMute] Please do not include comma in the word.");
+						return true;
+					}
 					if(!$this->inList("bannedwords", $word)){
 						$this->add("bannedwords", $word);
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully added ".$word." to banned-word list.");
@@ -473,6 +514,20 @@ class Main extends PluginBase implements Listener{
 				}
 			}
 		}
+		if($this->getConfig()->get("lengthlimit") !== false && strlen($message) > $this->getConfig()->get("lengthlimit")){
+			$event->setCancelled(true);
+			if($this->getConfig()->get("banlengthy")){
+				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator. You are now muted in chat.");
+				else $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator.");
+				$this->add("mutedplayers", $player);
+				$this->addIdentity($player);
+				if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
+				$this->getLogger()->notice($player." sent lengthy message in chat and has been muted automatically.");
+				return true;
+			}
+			else $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator.");
+			return true;
+		}
 		$this->lastmsgsender = $player;
 		$this->lastmsgtime = time();
 		$this->consecutivemsg = 1;
@@ -594,6 +649,11 @@ class Main extends PluginBase implements Listener{
 				$flag = "banspam";
 				$turnonmsg = "Players will be automatically muted if they send spam messages.";
 				$turnoffmsg = "Players will not muted if they send spam messages.";
+				break;
+			case "banlengthy":
+				$flag = "banlengthy";
+				$turnonmsg = "Players will be automatically muted if their message exceeds length limit.";
+				$turnoffmsg = "Players will not muted if their message is too long.";
 				break;
 			case "bansign":
 				$flag = "bansign";
