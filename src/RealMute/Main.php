@@ -87,7 +87,7 @@ class Main extends PluginBase implements Listener{
 				$this->getLogger()->info("An old version of config.yml detected. Old file was renamed to config.bak.");
 				$this->getLogger()->info("Your config.yml has been updated so that it is compatible with version 3.x!");
 			}
-			if($ver2) {
+			if($ver2){
 				$this->getLogger()->warning("If you want to downgrade RealMute back to version 2.x, please make sure you use v2.7.5 or v2.0.x-2.3.x.");
 				$this->getLogger()->warning("You can download version 2.7.5 at https://github.com/Leo3418/RealMute/releases/tag/v2.7.5");
 			}
@@ -131,8 +131,7 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
-						$helpmsg .= TextFormat::GOLD."/realmute banspam ".TextFormat::WHITE."Turn on/off auto-muting players if they send spam messages\n";
-						
+						$helpmsg .= TextFormat::GOLD."/realmute banspam ".TextFormat::WHITE."Turn on/off auto-muting players if they send spam messages\n";		
 						$sender->sendMessage($helpmsg);
 						return true;
 					}
@@ -150,7 +149,6 @@ class Main extends PluginBase implements Listener{
 					}
 					else{
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 3/3)"."\n";
-						
 						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
 						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
 						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
@@ -514,7 +512,7 @@ class Main extends PluginBase implements Listener{
 				}
 			}
 		}
-		if($this->getConfig()->get("lengthlimit") !== false && strlen($message) > $this->getConfig()->get("lengthlimit")){
+		if($this->getConfig()->get("lengthlimit") !== false && mb_strlen($message, "UTF8") > $this->getConfig()->get("lengthlimit")){
 			$event->setCancelled(true);
 			if($this->getConfig()->get("banlengthy")){
 				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator. You are now muted in chat.");
