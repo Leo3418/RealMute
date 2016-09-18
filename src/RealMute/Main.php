@@ -37,6 +37,7 @@ class Main extends PluginBase implements Listener{
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->getLogger()->notice("Copyright (C) 2016 Leo3418");
 		$this->getLogger()->notice("RealMute is free software licensed under GNU GPLv3 with the absence of any warranty");
+		$this->getLogger()->notice("This program includes work from PocketMine-MP, which is originally licensed under GNU LGPLv3");
 		if(!is_dir($this->getDataFolder())) mkdir($this->getDataFolder());
 		if(!is_dir($this->getDataFolder()."players")) mkdir($this->getDataFolder()."players", 0777, true);
 		$defaultconfig = array(
@@ -349,6 +350,7 @@ class Main extends PluginBase implements Listener{
 					$aboutmsg .= "RealMute is a plugin that allows administrator to mute players in chat.\n";
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
+					$aboutmsg .= "This program includes work from PocketMine-MP, which is originally licensed under GNU LGPLv3.\n";
 					$aboutmsg .= "See http://www.gnu.org/licenses/ for details.\n";
 					$aboutmsg .= "You can find updates, documentations and source code of this plugin, report bug, and contribute to this project at ".$this->getDescription()->getWebsite()."\n";
 					$sender->sendMessage($aboutmsg);
