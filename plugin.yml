@@ -1,6 +1,6 @@
 name: RealMute
 main: RealMute\Main
-version: 3.2.2
+version: 3.3.0
 api: 
 - 1.0.0
 - 1.1.0

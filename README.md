@@ -7,9 +7,9 @@ Here is some information that helps you start using this plugin quickly. For adv
 * Keep muting players even if they quit and join server again
 * Mute all players in chat
 * Time-limited mute
-* Block and mute(optional) players who send spam messages
+* Block and mute(optional) players who flood the chat screen
 * Block and mute(optional) players if they send any prohibited contents set by administrator
-* Block and mute(optional) players if their message exceeds length limit set by administrator
+* Mute players if their message exceeds length limit set by administrator, or slice the message only
 * An optional function to disallow muted players to use signs
 * An optional function to block players' private messages alongside chat messages
 * An optional function to block messages from devices **(requires API 2.0.0)** or IPs (for API 1.x) that muted players used
@@ -29,8 +29,8 @@ Here is some information that helps you start using this plugin quickly. For adv
 * `/realmute muteop` Include/Exclude OPs from muting all players
 * `/realmute wordmute` Turn on/off auto-muting players if they send banned words
 * `/realmute banpm` Turn on/off blocking private messages from muted players
-* `/realmute banspam` Turn on/off auto-muting players if they send spam messages
-* `/realmute banlengthy` Turn on/off auto-muting players if their message exceeds length limit
+* `/realmute banspam` Turn on/off auto-muting players if they flood the chat screen
+* `/realmute banlengthy <mute|slice|off>` Mute/Slice/Allow messages exceeding the length limit
 * `/realmute bansign` Allow/Disallow muted players to use signs
 * `/realmute mutedevice` **(API 2.0.0 only)** Turn on/off muting players' devices alongside usernames
 * `/realmute muteip` **(API 1.x only)** Turn on/off muting players' IPs alongside usernames
@@ -44,7 +44,7 @@ Here is some information that helps you start using this plugin quickly. For adv
 * `/realmute word` Show the banned-word list
 * `/realmute about` Show information about this plugin
 
-Note on muting/unmuting players: Player name is not case-sensitive.  
+Note on muting/unmuting players: Player name is not case-sensitive. If you are muting/unmuting an online player, you may only need to enter several beginning characters of the player's name instead of the full name (like "Leo" instead of "Leo3418").  
 Note on adding keywords: You can add an exclamation mark before the word if you want to match the whole word only. For example, if you add **!bo**, **boy** will not be blocked, but **bo y** will be blocked.
 
 ## Notice on downgrading from version 3.x
