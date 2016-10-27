@@ -17,7 +17,7 @@ api:
 - 2.1.0
 load: POSTWORLD
 author: Leo3418
-description: A plugin that allows administrator to mute players in chat.
+description: A chat management plugin with many extra features.
 website: https://github.com/Leo3418/RealMute/
 
 commands:
