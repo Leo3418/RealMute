@@ -95,7 +95,7 @@ class Main extends PluginBase implements Listener{
 		}
 		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
 		$this->getConfig()->save();
-		if($this->getServer()->getApiVersion() == "2.0.0") $this->supportcid = true;
+		if(strcmp("2", $this->getServer()->getApiVersion()[0]) == 0) $this->supportcid = true;
 		else $this->supportcid = false;
 		$this->identity = new Config($this->getDataFolder()."identity.txt", Config::ENUM);
 		$this->identity->save();
@@ -150,7 +150,7 @@ class Main extends PluginBase implements Listener{
 					}
 					else{
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 3/3)"."\n";
-						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list, if you want to match the whole word only, please add an exclamation mark before the word\n";
+						$helpmsg .= TextFormat::GOLD."/realmute addword <word> ".TextFormat::WHITE."Add a keyword to banned-word list. If you want to match the whole word only, please add an exclamation mark before the word\n";
 						$helpmsg .= TextFormat::GOLD."/realmute delword <word> ".TextFormat::WHITE."Delete a keyword from banned-word list\n";
 						$helpmsg .= TextFormat::GOLD."/realmute status ".TextFormat::WHITE."View current status of this plugin\n";
 						$helpmsg .= TextFormat::GOLD."/realmute list ".TextFormat::WHITE."List muted players\n";
@@ -178,7 +178,7 @@ class Main extends PluginBase implements Listener{
 								return true;
 							}
 							else{
-								$sender->sendMessage("[RealMute] You have already chosen this option.");
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
 								return true;
 							}
 						case "slice":
@@ -189,18 +189,18 @@ class Main extends PluginBase implements Listener{
 								return true;
 							}
 							else{
-								$sender->sendMessage("[RealMute] You have already chosen this option.");
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
 								return true;
 							}
 						case "off":
 							if($this->getConfig()->get("banlengthy") !== false){
 								$this->getConfig()->set("banlengthy", false);
 								$this->getConfig()->save();
-								$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players will not muted if their message is too long, the message will not be sliced.");
+								$sender->sendMessage(TextFormat::YELLOW."[RealMute] Players will not be muted if their message is too long, the message will not be sliced.");
 								return true;
 							}
 							else{
-								$sender->sendMessage("[RealMute] You have already chosen this option.");
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
 								return true;
 							}
 						default:
@@ -503,7 +503,7 @@ class Main extends PluginBase implements Listener{
 			if($this->consecutivemsg < 2){
 				$this->lastmsgsender = $player;
 				$this->lastmsgtime = time();
-				$this->consecutivemsg += 1;
+				++$this->consecutivemsg;
 				return true;
 			}
 			$event->setCancelled(true);
@@ -639,7 +639,7 @@ class Main extends PluginBase implements Listener{
 				}
 			}
 			else{
-				$count += 1;
+				++$count;
 				if(strcmp($count, substr_count($this->getConfig()->get($opt), ",")) == 0) $newlist .= $item;
 				else $newlist .= $item.",";
 			}
