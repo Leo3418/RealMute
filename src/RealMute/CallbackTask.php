@@ -1,9 +1,10 @@
 <?php
 
 /*
-	The author of this portion of code is PocketMine Team.
-	It is originally licensed under GNU Lesser General Public
-	License version 3 published by the Free Software Foundation.
+	This portion of code is from PocketMine-MP, a work of 
+	PocketMine Team. It is originally licensed under GNU
+	Lesser General Public License version 3 published by
+	the Free Software Foundation.
 */
 
 namespace RealMute;
