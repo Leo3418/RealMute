@@ -1,5 +1,5 @@
-# RealMute: A PocketMine chat management plugin by Leo3418
-RealMute is a plugin that allows administrator to mute players in chat.  
+# RealMute: A PocketMine-MP chat management plugin by Leo3418
+RealMute is a PocketMine-MP chat management plugin with many extra features.  
 Here is some information that helps you start using this plugin quickly. For advanced guide, please visit [RealMute Wiki](https://github.com/Leo3418/RealMute/wiki).
 
 ## Features

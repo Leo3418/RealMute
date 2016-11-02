@@ -1,6 +1,6 @@
 <?php  
 /* 
-	RealMute, a plugin that allows administrator to mute players in chat.
+	RealMute, a PocketMine-MP chat management plugin with many extra features.
 	Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)
 
 	This program is free software: you can redistribute it and/or modify
@@ -318,7 +318,6 @@ class Main extends PluginBase implements Listener{
 							$status .= TextFormat::WHITE."Restriction on messages exceeding length limit: ".TextFormat::YELLOW."OFF"."\n";
 							break;
 					}
-					
 					$status .= TextFormat::WHITE."Muted players cannot use signs: ".$this->isOn("bansign")."\n";
 					if($this->supportcid) $status .= TextFormat::WHITE."Mute devices alongside usernames: ".$this->isOn("muteidentity")."\n";
 					else $status .= TextFormat::WHITE."Mute IPs alongside usernames: ".$this->isOn("muteidentity")."\n";
@@ -402,7 +401,7 @@ class Main extends PluginBase implements Listener{
 				}
 				if($option == "about"){
 					$aboutmsg = TextFormat::AQUA."[RealMute] Version ".$this->getDescription()->getVersion()."\n";
-					$aboutmsg .= "RealMute is a plugin that allows administrator to mute players in chat.\n";
+					$aboutmsg .= "RealMute is a chat management plugin with many extra features.\n";
 					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
 					$aboutmsg .= "This program includes work from PocketMine-MP, which is originally licensed under GNU LGPLv3.\n";
