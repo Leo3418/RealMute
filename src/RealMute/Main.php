@@ -102,7 +102,9 @@ class Main extends PluginBase implements Listener{
 		$this->lastmsgsender = "";
 		$this->lastmsgtime = "";
 		$this->consecutivemsg = 1;
-		$this->getServer()->getScheduler()->scheduleRepeatingTask(new CallbackTask([$this,"checkTime"]),20);
+		$checkTimeTask = new CheckTime($this);
+		$handler = $this->getServer()->getScheduler()->scheduleRepeatingTask($checkTimeTask, 20);
+		$checkTimeTask->setHandler($handler);
 	}
 	public function onDisable(){
 		$this->getConfig()->save();
@@ -725,22 +727,6 @@ class Main extends PluginBase implements Listener{
 			$this->getConfig()->save();
 			$sender->sendMessage(TextFormat::YELLOW."[RealMute] ".$turnoffmsg);
 			return true;
-		}
-	}
-	public function checkTime(){
-		$list = explode(",",$this->getConfig()->get("mutedplayers"));
-		array_pop($list);
-		foreach($list as $player){
-			if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
-				$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
-				if($userconfig->get("unmutetime") != false){
-					$unmutetime = $userconfig->get("unmutetime");
-					if($unmutetime < time()){
-						$this->remove("mutedplayers", $player);
-						$this->removeIdentity($player);
-					}
-				}
-			}
 		}
 	}
 	public function isMuted($player){
