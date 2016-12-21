@@ -613,7 +613,7 @@ class Main extends PluginBase implements Listener{
 			return true;
 		}
 	}
-	protected function inList($opt, $target){
+	public function inList($opt, $target){
 		foreach((explode(",",$this->getConfig()->get($opt))) as $item){
 			if(strcmp(strtolower($target), $item) == 0){
 				return true;
@@ -622,12 +622,12 @@ class Main extends PluginBase implements Listener{
 		}
 		return false;
 	}
-	protected function add($opt, $target){
+	public function add($opt, $target){
 		if(count(explode(",",$this->getConfig()->get($opt))) == 1) $this->getConfig()->set($opt, strtolower($target).",");
 		else $this->getConfig()->set($opt, $this->getConfig()->get($opt).strtolower($target).",");
 		$this->getConfig()->save();
 	}
-	protected function remove($opt, $target){
+	public function remove($opt, $target){
 		$newlist = "";
 		$count = 0;
 		foreach((explode(",",$this->getConfig()->get($opt))) as $item){
@@ -651,7 +651,7 @@ class Main extends PluginBase implements Listener{
 			$time->save();
 		}
 	}
-	protected function addIdentity($player){
+	public function addIdentity($player){
 		if(is_file($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml") && $this->getConfig()->get("muteidentity")){
 			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
 			$useridentity = $userconfig->get("identity");
@@ -659,7 +659,7 @@ class Main extends PluginBase implements Listener{
 			$this->identity->save();
 		}
 	}
-	protected function removeIdentity($player){
+	public function removeIdentity($player){
 		if($this->getConfig()->get("muteidentity")){
 			$userconfig = new Config($this->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
 			$useridentity = $userconfig->get("identity");
@@ -667,12 +667,12 @@ class Main extends PluginBase implements Listener{
 			$this->identity->save();
 		}
 	}
-	protected function isOn($opt){
+	public function isOn($opt){
 		if($this->getConfig()->get($opt)) $text = TextFormat::GREEN."ON";
 		else $text = TextFormat::YELLOW."OFF";
 		return $text;
 	}
-	protected function tmMute($name, $time){
+	public function tmMute($name, $time){
 		$now = time();
 		$unmutetime = $now + $time * 60;
 		if(!is_dir($this->getDataFolder()."players/".strtolower($name[0]))) mkdir($this->getDataFolder()."players/".strtolower($name[0]), 0777, true);
@@ -681,7 +681,7 @@ class Main extends PluginBase implements Listener{
 		$userconfig->save();
 		return true;
 	}
-	protected function toggle($option, $sender){
+	public function toggle($option, $sender){
 		switch($option){
 			case "notify":
 				$flag = "notification";
