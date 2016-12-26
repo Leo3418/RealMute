@@ -403,7 +403,7 @@ class Main extends PluginBase implements Listener{
 				if($option == "about"){
 					$aboutmsg = TextFormat::AQUA."[RealMute] Version ".$this->getDescription()->getVersion()."\n";
 					$aboutmsg .= "RealMute is a chat management plugin with many extra features.\n";
-					$aboutmsg .= "Copyright (C) 2016 Leo3418 (https://github.com/Leo3418)\n";
+					$aboutmsg .= "Copyright (C) 2016, 2017 Leo3418 (https://github.com/Leo3418)\n";
 					$aboutmsg .= "This is free software licensed under GNU GPLv3 with the absence of any warranty.\n";
 					$aboutmsg .= "See http://www.gnu.org/licenses/ for details.\n";
 					$aboutmsg .= "You can find updates, documentations and source code of this plugin, report bug, and contribute to this project at ".$this->getDescription()->getWebsite()."\n";
