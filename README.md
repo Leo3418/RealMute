@@ -12,7 +12,7 @@ Here is some information that helps you start using this plugin quickly. For adv
 * Mute players if their message exceeds length limit set by administrator, or slice the message only
 * An optional function to disallow muted players to use signs
 * An optional function to block players' private messages alongside chat messages
-* An optional function to block messages from devices **(requires API 2.x)** or IPs (for API 1.x) that muted players used
+* An optional function to block messages from devices **(requires API 2.0.0 and higher)** or IPs (for API 1.x) that muted players used
 * An optional function to keep allowing OPs sending messages while all players are muted
 * An optional function to notify muted players when they are sending messages
 * See list of muted players and status of the plugin
@@ -32,7 +32,7 @@ Here is some information that helps you start using this plugin quickly. For adv
 * `/realmute banspam` Turn on/off auto-muting players if they flood the chat screen
 * `/realmute banlengthy <mute|slice|off>` Mute/Slice/Allow messages exceeding the length limit
 * `/realmute bansign` Allow/Disallow muted players to use signs
-* `/realmute mutedevice` **(API 2.x only)** Turn on/off muting players' devices alongside usernames
+* `/realmute mutedevice` **(API 2.0.0 and higher only)** Turn on/off muting players' devices alongside usernames
 * `/realmute muteip` **(API 1.x only)** Turn on/off muting players' IPs alongside usernames
 * `/realmute spamth <time>` Specify spam threshold in seconds (If players sends consecutive messages within this time interval, they will be blocked)
 * `/realmute amtime <time>` Set time limit(in minutes) of auto-mute, set 0 to disable
