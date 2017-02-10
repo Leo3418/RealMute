@@ -94,7 +94,7 @@ class Main extends PluginBase implements Listener{
 		}
 		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
 		$this->getConfig()->save();
-		if(strcmp("2", $this->getServer()->getApiVersion()[0]) == 0) $this->supportcid = true;
+		if(strcmp("1", $this->getServer()->getApiVersion()[0]) != 0) $this->supportcid = true;
 		else $this->supportcid = false;
 		$this->identity = new Config($this->getDataFolder()."identity.txt", Config::ENUM);
 		$this->identity->save();
