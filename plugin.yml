@@ -23,6 +23,8 @@ website: https://github.com/Leo3418/RealMute/
 
 commands:
  realmute:
+  aliases: 
+    - rmt
   description: "RealMute options"
   usage: "/realmute help|<options>"
   permission: realmute.option
