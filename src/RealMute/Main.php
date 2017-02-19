@@ -129,7 +129,7 @@ class Main extends PluginBase implements Listener{
 					if(count($args) !== 1 || $args[0] == 1){
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 1/3)"."\n";
 						$helpmsg .= TextFormat::GOLD."/realmute help <page> ".TextFormat::WHITE."Jump to another page of Help\n";
-						$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
+						$helpmsg .= TextFormat::GOLD."/realmute notify <on|off|fake>".TextFormat::WHITE."Toggle notification to muted players, or show a fake chat message to muted players\n";
 						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
@@ -161,9 +161,53 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
-				if($option == "notify" || $option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign"){
+				if($option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign"){
 					$this->toggle($option, $sender);
 					return true;
+				}
+				if($option == "notify"){
+					if(count($args) !== 1){
+						$sender->sendMessage("Usage: /realmute notify <on|off|fake>");
+						return true;
+					}
+					switch(array_shift($args)){
+						case "on":
+							if($this->getConfig()->get("notification") !== true){
+								$this->getConfig()->set("notification", true);
+								$this->getConfig()->save();
+								$sender->sendMessage(TextFormat::GREEN."[RealMute] Muted players will be notified when they are sending messages.");
+								return true;
+							}
+							else{
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
+								return true;
+							}
+						case "off":
+							if($this->getConfig()->get("notification") !== false){
+								$this->getConfig()->set("notification", false);
+								$this->getConfig()->save();
+								$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players will not be notified.");
+								return true;
+							}
+							else{
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
+								return true;
+							}
+						case "fake":
+							if($this->getConfig()->get("notification") !== "fake"){
+								$this->getConfig()->set("notification", "fake");
+								$this->getConfig()->save();
+								$sender->sendMessage(TextFormat::AQUA."[RealMute] Muted players will see a fake chat message in their client when they send one. The message is still invisible to other players.");
+								return true;
+							}
+							else{
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
+								return true;
+							}
+						default:
+							$sender->sendMessage("Usage: /realmute notify <on|off|fake>");
+							return true;
+					}
 				}
 				if($option == "banlengthy"){
 					if(count($args) !== 1){
@@ -303,7 +347,9 @@ class Main extends PluginBase implements Listener{
 				if($option == "status"){
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
-					$status .= TextFormat::WHITE."Notify muted players: ".$this->isOn("notification")."\n";
+					if($this->getConfig()->get("notification") === false) $status .= TextFormat::WHITE."Notify muted players: ".TextFormat::YELLOW."OFF"."\n";
+					elseif($this->getConfig()->get("notification") === "fake") $status .= TextFormat::WHITE."Notify muted players: ".TextFormat::AQUA."Fake message"."\n";
+					else $status .= TextFormat::WHITE."Notify muted players: ".TextFormat::GREEN."ON"."\n";
 					$status .= TextFormat::WHITE."Exclude OPs when muting all players: ".$this->isOn("excludeop")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
@@ -683,11 +729,6 @@ class Main extends PluginBase implements Listener{
 	}
 	public function toggle($option, $sender){
 		switch($option){
-			case "notify":
-				$flag = "notification";
-				$turnonmsg = "Muted players will be notified when they are sending messages.";
-				$turnoffmsg = "Muted players will not be notified.";
-				break;
 			case "muteop":
 				$flag = "excludeop";
 				$turnonmsg = "When muting all players, OPs will be excluded.";
