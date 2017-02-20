@@ -10,11 +10,11 @@ Here is some information that helps you start using this plugin quickly. For adv
 * Block and mute(optional) players who flood the chat screen
 * Block and mute(optional) players if they send any prohibited contents set by administrator
 * Mute players if their message exceeds length limit set by administrator, or slice the message only
+* Show a fake message prompt in muted players' client, so they will think that they are not muted
 * An optional function to disallow muted players to use signs
 * An optional function to block players' private messages alongside chat messages
 * An optional function to block messages from devices **(requires API 2.0.0 and higher)** or IPs (for API 1.x) that muted players used
 * An optional function to keep allowing OPs sending messages while all players are muted
-* An optional function to notify muted players when they are sending messages
 * See list of muted players and status of the plugin
 * Time-limitedly mute players who are automatically muted by this plugin
 * [API methods](https://github.com/Leo3418/RealMute/wiki/API-methods-guide) that allow your plugin work with RealMute
