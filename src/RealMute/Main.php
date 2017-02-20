@@ -629,7 +629,7 @@ class Main extends PluginBase implements Listener{
 			}
 			elseif($this->getConfig()->get("banlengthy") == "slice"){
 				$event->setMessage(mb_substr($message, 0, $this->getConfig()->get("lengthlimit"), "UTF8"));
-				$event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator and has been sliced.");
+				$event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator and has been sliced.".TextFormat::RESET);
 			}
 		}
 		$this->lastmsgsender = $player;
