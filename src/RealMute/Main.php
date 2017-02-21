@@ -565,10 +565,10 @@ class Main extends PluginBase implements Listener{
 				$this->add("mutedplayers", $player);
 				if($this->getConfig()->get("automutetime") != false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 				if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."Because you are flooding the chat screen, you are now muted in chat.");
-				elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 				$this->getLogger()->notice($player." flooded the chat screen and has been muted automatically.");
 			}
-			$event->getPlayer()->sendMessage(TextFormat::RED."Do not flood the chat screen.");
+			if($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Do not flood the chat screen.");
+			else $this->sendFakeMessage($event);
 			$this->lastmsgsender = $player;
 			$this->lastmsgtime = time();
 			return true;
@@ -604,7 +604,8 @@ class Main extends PluginBase implements Listener{
 							return true;
 							break;
 						}
-						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+						elseif($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+						else $this->sendFakeMessage($event);
 						return true;
 						break;
 					}
@@ -624,7 +625,8 @@ class Main extends PluginBase implements Listener{
 						return true;
 						break;
 					}
-					else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+					elseif($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+					else $this->sendFakeMessage($event);
 					return true;
 					break;
 				}
@@ -643,8 +645,17 @@ class Main extends PluginBase implements Listener{
 				return true;
 			}
 			elseif($this->getConfig()->get("banlengthy") == "slice"){
+				if($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator and has been sliced.".TextFormat::RESET);
+				else{
+					$recipients = $event->getRecipients();
+					$newrecipients = array();
+					foreach($recipients as $player){
+						if($player != $event->getPlayer()) $newrecipients[] = $player;
+					}
+					$event->setRecipients($newrecipients);
+					$this->sendFakeMessage($event);
+				}
 				$event->setMessage(mb_substr($message, 0, $this->getConfig()->get("lengthlimit"), "UTF8"));
-				$event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator and has been sliced.".TextFormat::RESET);
 			}
 		}
 		$this->lastmsgsender = $player;
