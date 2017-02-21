@@ -34,7 +34,7 @@ Here is some information that helps you start using this plugin quickly. For adv
 * `/realmute bansign` Allow/Disallow muted players to use signs
 * `/realmute mutedevice` **(API 2.0.0 and higher only)** Turn on/off muting players' devices alongside usernames
 * `/realmute muteip` **(API 1.x only)** Turn on/off muting players' IPs alongside usernames
-* `/realmute spamth <time>` Specify spam threshold in seconds (If players sends consecutive messages within this time interval, they will be blocked)
+* `/realmute spamth <time>` Specify spam threshold in seconds (If players sends consecutive messages within this time interval, they will be blocked), set 0 to disable
 * `/realmute amtime <time>` Set time limit(in minutes) of auto-mute, set 0 to disable
 * `/realmute length <number of characters>` Set length limit of chat messages, set 0 to disable
 * `/realmute addword <word>` Add a keyword to banned word list

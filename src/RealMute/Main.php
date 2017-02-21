@@ -51,7 +51,7 @@ class Main extends PluginBase implements Listener{
 			"banlengthy" => false,
 			"bansign" => false,
 			"muteidentity" => false,
-			"spamthreshold" => 1,
+			"spamthreshold" => false,
 			"automutetime" => false,
 			"lengthlimit" => false,
 			"mutedplayers" => "",
@@ -144,7 +144,7 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute bansign ".TextFormat::WHITE."Allow/Disallow muted players to use signs\n";
 						if($this->supportcid) $helpmsg .= TextFormat::GOLD."/realmute mutedevice ".TextFormat::WHITE."Turn on/off muting players' devices alongside usernames\n";
 						else $helpmsg .= TextFormat::GOLD."/realmute muteip ".TextFormat::WHITE."Turn on/off muting players' IPs alongside usernames\n";
-						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
+						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3), set 0 to disable\n";
 						$helpmsg .= TextFormat::GOLD."/realmute amtime <time in minutes> ".TextFormat::WHITE."Set time limit of auto-mute, set 0 to disable\n";
 						$helpmsg .= TextFormat::GOLD."/realmute length <number of characters> ".TextFormat::WHITE."Set length limit of chat messages, set 0 to disable\n";
 						$sender->sendMessage($helpmsg);
@@ -284,7 +284,7 @@ class Main extends PluginBase implements Listener{
 				}
 				if($option == "spamth"){
 					if(count($args) != 1){
-						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
+						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3\nSet 0 to disable");
 						return true;
 					}
 					$threshold = intval(array_shift($args));
@@ -294,8 +294,14 @@ class Main extends PluginBase implements Listener{
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set spam threshold to ".$threshold." second(s).");
 						return true;
 					}
+					elseif($threshold == 0){
+						$this->getConfig()->set("spamthreshold", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Chat flooding blocking has been disabled.");
+						return true;
+					}
 					else{
-						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
+						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3\nSet 0 to disable");
 						return true;
 					}
 				}
@@ -369,7 +375,8 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Muted players cannot use signs: ".$this->isOn("bansign")."\n";
 					if($this->supportcid) $status .= TextFormat::WHITE."Mute devices alongside usernames: ".$this->isOn("muteidentity")."\n";
 					else $status .= TextFormat::WHITE."Mute IPs alongside usernames: ".$this->isOn("muteidentity")."\n";
-					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
+					if($this->getConfig()->get("spamthreshold") == false) $status .= TextFormat::WHITE."Spam threshold: ".$this->isOn("spamthreshold")."\n";
+					else $status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." minute(s)\n";
 					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
 					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
 					if($this->getConfig()->get("lengthlimit") == false) $status .= TextFormat::WHITE."Length limit of chat messages: ".$this->isOn("lengthlimit")."\n";
@@ -546,7 +553,7 @@ class Main extends PluginBase implements Listener{
 				return true;
 			}
 		}
-		elseif((!$this->inList("mutedplayers", $player) && !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
+		elseif($this->getConfig()->get("spamthreshold") != false && (!$this->inList("mutedplayers", $player) && !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
 			if($this->consecutivemsg < 2){
 				$this->lastmsgsender = $player;
 				$this->lastmsgtime = time();
