@@ -376,7 +376,7 @@ class Main extends PluginBase implements Listener{
 					if($this->supportcid) $status .= TextFormat::WHITE."Mute devices alongside usernames: ".$this->isOn("muteidentity")."\n";
 					else $status .= TextFormat::WHITE."Mute IPs alongside usernames: ".$this->isOn("muteidentity")."\n";
 					if($this->getConfig()->get("spamthreshold") == false) $status .= TextFormat::WHITE."Spam threshold: ".$this->isOn("spamthreshold")."\n";
-					else $status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." minute(s)\n";
+					else $status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
 					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
 					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
 					if($this->getConfig()->get("lengthlimit") == false) $status .= TextFormat::WHITE."Length limit of chat messages: ".$this->isOn("lengthlimit")."\n";
