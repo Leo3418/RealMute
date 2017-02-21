@@ -28,6 +28,7 @@ use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerCommandPreprocessEvent;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\TranslationContainer;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
@@ -50,7 +51,7 @@ class Main extends PluginBase implements Listener{
 			"banlengthy" => false,
 			"bansign" => false,
 			"muteidentity" => false,
-			"spamthreshold" => 1,
+			"spamthreshold" => false,
 			"automutetime" => false,
 			"lengthlimit" => false,
 			"mutedplayers" => "",
@@ -94,7 +95,7 @@ class Main extends PluginBase implements Listener{
 		}
 		$config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaultconfig);
 		$this->getConfig()->save();
-		if(strcmp("2", $this->getServer()->getApiVersion()[0]) == 0) $this->supportcid = true;
+		if(strcmp("1", $this->getServer()->getApiVersion()[0]) != 0) $this->supportcid = true;
 		else $this->supportcid = false;
 		$this->identity = new Config($this->getDataFolder()."identity.txt", Config::ENUM);
 		$this->identity->save();
@@ -120,16 +121,16 @@ class Main extends PluginBase implements Listener{
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args){
 		switch($command->getName()){
 			case "realmute":
-				if(count($args) !== 1 && count($args) !== 2){
+				if(count($args) != 1 && count($args) != 2){
 					$sender->sendMessage("Usage: ".$command->getUsage());
 					return true;
 				}
 				$option = array_shift($args);
 				if($option == "help"){
-					if(count($args) !== 1 || $args[0] == 1){
+					if(count($args) != 1 || $args[0] == 1){
 						$helpmsg  = TextFormat::AQUA."[RealMute] Options".TextFormat::WHITE." (Page 1/3)"."\n";
 						$helpmsg .= TextFormat::GOLD."/realmute help <page> ".TextFormat::WHITE."Jump to another page of Help\n";
-						$helpmsg .= TextFormat::GOLD."/realmute notify ".TextFormat::WHITE."Toggle notification to muted players\n";
+						$helpmsg .= TextFormat::GOLD."/realmute notify <on|off|fake>".TextFormat::WHITE."Toggle notification to muted players, or show a fake chat message to muted players\n";
 						$helpmsg .= TextFormat::GOLD."/realmute muteop ".TextFormat::WHITE."When muting all players, include/exclude OPs\n";
 						$helpmsg .= TextFormat::GOLD."/realmute wordmute ".TextFormat::WHITE."Turn on/off auto-muting players if they send banned words\n";
 						$helpmsg .= TextFormat::GOLD."/realmute banpm ".TextFormat::WHITE."Turn on/off blocking muted players' private messages\n";
@@ -143,7 +144,7 @@ class Main extends PluginBase implements Listener{
 						$helpmsg .= TextFormat::GOLD."/realmute bansign ".TextFormat::WHITE."Allow/Disallow muted players to use signs\n";
 						if($this->supportcid) $helpmsg .= TextFormat::GOLD."/realmute mutedevice ".TextFormat::WHITE."Turn on/off muting players' devices alongside usernames\n";
 						else $helpmsg .= TextFormat::GOLD."/realmute muteip ".TextFormat::WHITE."Turn on/off muting players' IPs alongside usernames\n";
-						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3)\n";
+						$helpmsg .= TextFormat::GOLD."/realmute spamth <time in seconds> ".TextFormat::WHITE."Set minimun interval allowed between two messages sent by a player (Allowed range: 1-3), set 0 to disable\n";
 						$helpmsg .= TextFormat::GOLD."/realmute amtime <time in minutes> ".TextFormat::WHITE."Set time limit of auto-mute, set 0 to disable\n";
 						$helpmsg .= TextFormat::GOLD."/realmute length <number of characters> ".TextFormat::WHITE."Set length limit of chat messages, set 0 to disable\n";
 						$sender->sendMessage($helpmsg);
@@ -161,12 +162,56 @@ class Main extends PluginBase implements Listener{
 						return true;
 					}
 				}
-				if($option == "notify" || $option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign"){
+				if($option == "muteop" || $option == "wordmute" || $option == "banpm" || $option == "banspam" || $option == "bansign"){
 					$this->toggle($option, $sender);
 					return true;
 				}
+				if($option == "notify"){
+					if(count($args) != 1){
+						$sender->sendMessage("Usage: /realmute notify <on|off|fake>");
+						return true;
+					}
+					switch(array_shift($args)){
+						case "on":
+							if($this->getConfig()->get("notification") !== true){
+								$this->getConfig()->set("notification", true);
+								$this->getConfig()->save();
+								$sender->sendMessage(TextFormat::GREEN."[RealMute] Muted players will be notified when they are sending messages.");
+								return true;
+							}
+							else{
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
+								return true;
+							}
+						case "off":
+							if($this->getConfig()->get("notification") !== false){
+								$this->getConfig()->set("notification", false);
+								$this->getConfig()->save();
+								$sender->sendMessage(TextFormat::YELLOW."[RealMute] Muted players will not be notified.");
+								return true;
+							}
+							else{
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
+								return true;
+							}
+						case "fake":
+							if($this->getConfig()->get("notification") !== "fake"){
+								$this->getConfig()->set("notification", "fake");
+								$this->getConfig()->save();
+								$sender->sendMessage(TextFormat::AQUA."[RealMute] Muted players will see a fake chat message in their client when they send one. The message is still invisible to other players.");
+								return true;
+							}
+							else{
+								$sender->sendMessage(TextFormat::RED."[RealMute] You have already chosen this option.");
+								return true;
+							}
+						default:
+							$sender->sendMessage("Usage: /realmute notify <on|off|fake>");
+							return true;
+					}
+				}
 				if($option == "banlengthy"){
-					if(count($args) !== 1){
+					if(count($args) != 1){
 						$sender->sendMessage("Usage: /realmute banlengthy <mute|slice|off>");
 						return true;
 					}
@@ -238,8 +283,8 @@ class Main extends PluginBase implements Listener{
 					}
 				}
 				if($option == "spamth"){
-					if(count($args) !== 1){
-						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
+					if(count($args) != 1){
+						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3\nSet 0 to disable");
 						return true;
 					}
 					$threshold = intval(array_shift($args));
@@ -249,13 +294,19 @@ class Main extends PluginBase implements Listener{
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set spam threshold to ".$threshold." second(s).");
 						return true;
 					}
+					elseif($threshold == 0){
+						$this->getConfig()->set("spamthreshold", false);
+						$this->getConfig()->save();
+						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Chat flooding blocking has been disabled.");
+						return true;
+					}
 					else{
-						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3");
+						$sender->sendMessage("Usage: /realmute spamth <time in seconds>\nAllowed range for time: 1-3\nSet 0 to disable");
 						return true;
 					}
 				}
 				if($option == "amtime"){
-					if(count($args) !== 1){
+					if(count($args) != 1){
 						$sender->sendMessage("Usage: /realmute amtime <time in minutes>\nSet 0 to disable");
 						return true;
 					}
@@ -278,7 +329,7 @@ class Main extends PluginBase implements Listener{
 					}
 				}
 				if($option == "length"){
-					if(count($args) !== 1){
+					if(count($args) != 1){
 						$sender->sendMessage("Usage: /realmute length <number of characters>\nSet 0 to disable");
 						return true;
 					}
@@ -289,7 +340,7 @@ class Main extends PluginBase implements Listener{
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set length limit of message to ".$length." character(s).");
 						return true;
 					}
-					elseif($time == 0){
+					elseif($length == 0){
 						$this->getConfig()->set("lengthlimit", false);
 						$this->getConfig()->save();
 						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Message length limit is removed.");
@@ -303,7 +354,9 @@ class Main extends PluginBase implements Listener{
 				if($option == "status"){
 					$status = TextFormat::AQUA."[RealMute] Status\n";
 					$status .= TextFormat::WHITE."Mute all players: ".$this->isOn("muteall")."\n";
-					$status .= TextFormat::WHITE."Notify muted players: ".$this->isOn("notification")."\n";
+					if($this->getConfig()->get("notification") === false) $status .= TextFormat::WHITE."Notify muted players: ".TextFormat::YELLOW."OFF"."\n";
+					elseif($this->getConfig()->get("notification") === "fake") $status .= TextFormat::WHITE."Notify muted players: ".TextFormat::AQUA."Fake message"."\n";
+					else $status .= TextFormat::WHITE."Notify muted players: ".TextFormat::GREEN."ON"."\n";
 					$status .= TextFormat::WHITE."Exclude OPs when muting all players: ".$this->isOn("excludeop")."\n";
 					$status .= TextFormat::WHITE."Auto-mute players if they send banned words: ".$this->isOn("wordmute")."\n";
 					$status .= TextFormat::WHITE."Block muted players' private messages: ".$this->isOn("banpm")."\n";
@@ -322,7 +375,8 @@ class Main extends PluginBase implements Listener{
 					$status .= TextFormat::WHITE."Muted players cannot use signs: ".$this->isOn("bansign")."\n";
 					if($this->supportcid) $status .= TextFormat::WHITE."Mute devices alongside usernames: ".$this->isOn("muteidentity")."\n";
 					else $status .= TextFormat::WHITE."Mute IPs alongside usernames: ".$this->isOn("muteidentity")."\n";
-					$status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." second(s)\n";
+					if($this->getConfig()->get("spamthreshold") == false) $status .= TextFormat::WHITE."Spam threshold: ".$this->isOn("spamthreshold")."\n";
+					else $status .= TextFormat::WHITE."Spam threshold: ".TextFormat::AQUA.($this->getConfig()->get("spamthreshold"))." minute(s)\n";
 					if($this->getConfig()->get("automutetime") == false) $status .= TextFormat::WHITE."Time limit of auto-mute: ".$this->isOn("automutetime")."\n";
 					else $status .= TextFormat::WHITE."Time limit of auto-mute: ".TextFormat::AQUA.($this->getConfig()->get("automutetime"))." minute(s)\n";
 					if($this->getConfig()->get("lengthlimit") == false) $status .= TextFormat::WHITE."Length limit of chat messages: ".$this->isOn("lengthlimit")."\n";
@@ -356,12 +410,12 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 				if($option == "addword"){
-					if(count($args) !== 1){
+					if(count($args) != 1){
 						$sender->sendMessage("Usage: /realmute addword <word>");
 						return true;
 					}
 					$word = array_shift($args);
-					if(stripos($word, ",") !== false){
+					if(stripos($word, ",") != false){
 						$sender->sendMessage(TextFormat::RED."[RealMute] Please do not include comma in the word.");
 						return true;
 					}
@@ -376,7 +430,7 @@ class Main extends PluginBase implements Listener{
 					}
 				}
 				if($option == "delword"){
-					if(count($args) !== 1){
+					if(count($args) != 1){
 						$sender->sendMessage("Usage: /realmute delword <word>");
 						return true;
 					}
@@ -415,7 +469,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 			case "rmute":
-				if(count($args) !== 1 && count($args) !== 2){
+				if(count($args) != 1 && count($args) != 2){
 					$sender->sendMessage("Usage: ".$command->getUsage());
 					return true;
 				}
@@ -443,7 +497,7 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 			case "runmute":
-				if(count($args) !== 1){
+				if(count($args) != 1){
 					$sender->sendMessage("Usage: ".$command->getUsage());
 					return true;
 				}
@@ -494,11 +548,12 @@ class Main extends PluginBase implements Listener{
 			if($this->getConfig()->get("excludeop") && $event->getPlayer()->hasPermission("realmute.muteignored")) return true;
 			else{
 				$event->setCancelled(true);
-				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Administrator has muted all players in chat.");
+				if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."Administrator has muted all players in chat.");
+				elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 				return true;
 			}
 		}
-		elseif((!$this->inList("mutedplayers", $player) && !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
+		elseif($this->getConfig()->get("spamthreshold") != false && (!$this->inList("mutedplayers", $player) && !in_array($useridentity, $mutedidentity)) && $this->lastmsgsender == $player && time() - $this->lastmsgtime <= ($this->getConfig()->get("spamthreshold"))){
 			if($this->consecutivemsg < 2){
 				$this->lastmsgsender = $player;
 				$this->lastmsgtime = time();
@@ -508,11 +563,12 @@ class Main extends PluginBase implements Listener{
 			$event->setCancelled(true);
 			if($this->getConfig()->get("banspam")){
 				$this->add("mutedplayers", $player);
-				if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
-				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Because you are flooding the chat screen, you are now muted in chat.");
+				if($this->getConfig()->get("automutetime") != false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
+				if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."Because you are flooding the chat screen, you are now muted in chat.");
 				$this->getLogger()->notice($player." flooded the chat screen and has been muted automatically.");
 			}
-			$event->getPlayer()->sendMessage(TextFormat::RED."Do not flood the chat screen.");
+			if($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Do not flood the chat screen.");
+			else $this->sendFakeMessage($event);
 			$this->lastmsgsender = $player;
 			$this->lastmsgtime = time();
 			return true;
@@ -522,68 +578,84 @@ class Main extends PluginBase implements Listener{
 			if($userconfig->get("unmutetime") != false){
 				$unmutetime = $userconfig->get("unmutetime");
 				$event->setCancelled(true);
-				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
+				if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat. You will be unmuted in ".(ceil(($unmutetime - time())/60))." minute(s).");
+				elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 				return true;
 			}
 			$event->setCancelled(true);
-			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+			if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."You have been muted in chat.");
+			elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 			return true;
 		}
 		foreach(explode(",",$this->getConfig()->get("bannedwords")) as $bannedword){
-			if(strlen($bannedword)!== 0 && $bannedword[0] == "!"){
+			if(strlen($bannedword)!= 0 && $bannedword[0] == "!"){
 				$bannedword = substr($bannedword, 1);
 				foreach(explode(" ",$message) as $word){
 					if(strcmp(strtolower($word), $bannedword) == 0){
 						$event->setCancelled(true);
 						if($this->getConfig()->get("wordmute")){
-							if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+							if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+							elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 							else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 							$this->add("mutedplayers", $player);
 							$this->addIdentity($player);
-							if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
+							if($this->getConfig()->get("automutetime") != false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 							$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 							return true;
 							break;
 						}
-						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+						elseif($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+						else $this->sendFakeMessage($event);
 						return true;
 						break;
 					}
 				}
 			}
 			else{
-				if(stripos($message, $bannedword) !== false){
+				if(stripos($message, $bannedword) != false){
 					$event->setCancelled(true);
 					if($this->getConfig()->get("wordmute")){
-						if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+						if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator. You are now muted in chat.");
+						elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 						else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
 						$this->add("mutedplayers", $player);
 						$this->addIdentity($player);
-						if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
+						if($this->getConfig()->get("automutetime") != false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 						$this->getLogger()->notice($player." sent banned words in chat and has been muted automatically.");
 						return true;
 						break;
 					}
-					else $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+					elseif($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Your message contains banned word set by administrator.");
+					else $this->sendFakeMessage($event);
 					return true;
 					break;
 				}
 			}
 		}
-		if($this->getConfig()->get("lengthlimit") !== false && mb_strlen($message, "UTF8") > $this->getConfig()->get("lengthlimit")){
+		if($this->getConfig()->get("lengthlimit") != false && mb_strlen($message, "UTF8") > $this->getConfig()->get("lengthlimit")){
 			if($this->getConfig()->get("banlengthy") == "mute"){
 				$event->setCancelled(true);
-				if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator. You are now muted in chat.");
+				if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator. You are now muted in chat.");
+				elseif($this->getConfig()->get("notification") === "fake") $this->sendFakeMessage($event);
 				else $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator.");
 				$this->add("mutedplayers", $player);
 				$this->addIdentity($player);
-				if($this->getConfig()->get("automutetime") !== false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
+				if($this->getConfig()->get("automutetime") != false) $this->tmMute($player, $this->getConfig()->get("automutetime"));
 				$this->getLogger()->notice($player." sent lengthy message in chat and has been muted automatically.");
 				return true;
 			}
 			elseif($this->getConfig()->get("banlengthy") == "slice"){
+				if($this->getConfig()->get("notification") !== "fake") $event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator and has been sliced.".TextFormat::RESET);
+				else{
+					$recipients = $event->getRecipients();
+					$newrecipients = array();
+					foreach($recipients as $player){
+						if($player != $event->getPlayer()) $newrecipients[] = $player;
+					}
+					$event->setRecipients($newrecipients);
+					$this->sendFakeMessage($event);
+				}
 				$event->setMessage(mb_substr($message, 0, $this->getConfig()->get("lengthlimit"), "UTF8"));
-				$event->getPlayer()->sendMessage(TextFormat::RED."Your message exceeds length limit set by administrator and has been sliced.");
 			}
 		}
 		$this->lastmsgsender = $player;
@@ -598,7 +670,7 @@ class Main extends PluginBase implements Listener{
 		$useridentity = $userconfig->get("identity");
 		if($this->getConfig()->get("banpm") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteidentity") && in_array($useridentity, $mutedidentity))) && (substr($command, 0, 6) == "/tell " || substr($command, 0, 5) == "/msg " || substr($command, 0, 3) == "/m " || substr($command, 0, 9) == "/whisper " || (!$this->getServer()->getPluginManager()->getPlugin("SWorld") && substr($command, 0, 3) == "/w "))){
 			$event->setCancelled(true);
-			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
+			if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to send private messages until you get unmuted in chat.");
 			return true;
 		}
 	}
@@ -609,7 +681,7 @@ class Main extends PluginBase implements Listener{
 		$useridentity = $userconfig->get("identity");
 		if($this->getConfig()->get("bansign") && ($this->inList("mutedplayers", $player) || ($this->getConfig()->get("muteidentity") && in_array($useridentity, $mutedidentity))) && ($event->getBlock()->getID() == 323 || $event->getBlock()->getID() == 63 || $event->getBlock()->getID() == 68)){
 			$event->setCancelled(true);
-			if($this->getConfig()->get("notification")) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to use signs until you get unmuted in chat.");
+			if($this->getConfig()->get("notification") === true) $event->getPlayer()->sendMessage(TextFormat::RED."You are not allowed to use signs until you get unmuted in chat.");
 			return true;
 		}
 	}
@@ -683,11 +755,6 @@ class Main extends PluginBase implements Listener{
 	}
 	public function toggle($option, $sender){
 		switch($option){
-			case "notify":
-				$flag = "notification";
-				$turnonmsg = "Muted players will be notified when they are sending messages.";
-				$turnoffmsg = "Muted players will not be notified.";
-				break;
 			case "muteop":
 				$flag = "excludeop";
 				$turnonmsg = "When muting all players, OPs will be excluded.";
@@ -726,6 +793,12 @@ class Main extends PluginBase implements Listener{
 			$sender->sendMessage(TextFormat::YELLOW."[RealMute] ".$turnoffmsg);
 			return true;
 		}
+	}
+	public function sendFakeMessage($event){
+		$format = $event->getFormat();
+		if($format != "chat.type.text") $fakemessage = $format;
+		else $fakemessage = new TranslationContainer("%chat.type.text", [$event->getPlayer()->getName(), $event->getMessage()]);
+		$event->getPlayer()->sendMessage($fakemessage);
 	}
 	public function isMuted($player){
 		if($player instanceof Player) $name = $player->getName();
