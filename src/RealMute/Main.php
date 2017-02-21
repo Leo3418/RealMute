@@ -340,7 +340,7 @@ class Main extends PluginBase implements Listener{
 						$sender->sendMessage(TextFormat::GREEN."[RealMute] Successfully set length limit of message to ".$length." character(s).");
 						return true;
 					}
-					elseif($time == 0){
+					elseif($length == 0){
 						$this->getConfig()->set("lengthlimit", false);
 						$this->getConfig()->save();
 						$sender->sendMessage(TextFormat::YELLOW."[RealMute] Message length limit is removed.");
