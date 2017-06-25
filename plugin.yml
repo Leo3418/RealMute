@@ -15,7 +15,7 @@ api:
 - 1.13.1
 - 2.0.0
 - 2.1.0
-- 3.0.0-ALPHA5
+- 3.0.0-ALPHA6
 load: POSTWORLD
 author: Leo3418
 description: A chat management plugin with many extra features.
