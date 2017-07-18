@@ -15,7 +15,8 @@ api:
 - 1.13.1
 - 2.0.0
 - 2.1.0
-- 3.0.0-ALPHA6
+- 3.0.0-ALPHA7
+- 3.0.1
 load: POSTWORLD
 author: Leo3418
 description: A chat management plugin with many extra features.
@@ -23,7 +24,7 @@ website: https://github.com/Leo3418/RealMute/
 
 commands:
  realmute:
-  aliases:
+  aliases: 
     - rmt
   description: "RealMute options"
   usage: "/realmute help|<options>"
@@ -44,7 +45,7 @@ commands:
   description: "Unmute all players"
   usage: "/unmuteall"
   permission: realmute.unmuteall
-
+  
 permissions:
  realmute:
   description: "Allows all RealMute commands"
