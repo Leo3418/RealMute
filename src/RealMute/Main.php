@@ -118,8 +118,7 @@ class Main extends PluginBase implements Listener{
 		else $userconfig->set("identity", strval($event->getPlayer()->getAddress()));
 		$userconfig->save();
 	}
-	public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
-	{
+	public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool{
 		switch($command->getName()){
 			case "realmute":
 				if(count($args) != 1 && count($args) != 2){
@@ -538,7 +537,6 @@ class Main extends PluginBase implements Listener{
 					return true;
 				}
 		}
-		return true;
 	}
 	public function onPlayerChat(PlayerChatEvent $event){
 		$player = $event->getPlayer()->getName();
