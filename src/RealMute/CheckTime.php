@@ -22,29 +22,44 @@ namespace RealMute;
 use pocketmine\scheduler\PluginTask;
 use pocketmine\utils\Config;
 
-class CheckTime extends PluginTask{
-	public $plugin;
-	public function __construct(Main $plugin){
-		parent::__construct($plugin);
-		$this->plugin = $plugin;
-	}
-	public function getPlugin(){
-		return $this->plugin;
-	}
-	public function onRun($tick){
-		$list = explode(",",$this->getPlugin()->getConfig()->get("mutedplayers"));
-		array_pop($list);
-		foreach($list as $player){
-			if(is_file($this->getPlugin()->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml")){
-				$userconfig = new Config($this->getPlugin()->getDataFolder()."players/".strtolower($player[0])."/".strtolower($player).".yml");
-				if($userconfig->get("unmutetime") != false){
-					$unmutetime = $userconfig->get("unmutetime");
-					if($unmutetime < time()){
-						$this->getPlugin()->remove("mutedplayers", $player);
-						$this->getPlugin()->removeIdentity($player);
-					}
-				}
-			}
-		}
-	}
+class CheckTime extends PluginTask
+{
+    public $plugin;
+
+    public function __construct(Main $plugin)
+    {
+        parent::__construct($plugin);
+        $this->plugin = $plugin;
+    }
+
+    public function getPlugin()
+    {
+        return $this->plugin;
+    }
+
+    /**
+     * In every tick, checks remaining mute time of every player and ummutes
+     * if needed.
+     * 
+     * @param int $tick
+     */
+    public function onRun(int $tick)
+    {
+        $list = explode(",", $this->getPlugin()->getConfig()->get("mutedplayers"));
+        array_pop($list);
+        foreach ($list as $player) {
+            if (is_file($this->getPlugin()->getDataFolder() .
+                "players/" . strtolower($player[0]) . "/" . strtolower($player) . ".yml")) {
+                $userConfig = new Config($this->getPlugin()->getDataFolder() .
+                    "players/" . strtolower($player[0]) . "/" . strtolower($player) . ".yml");
+                if ($userConfig->get("unmutetime") != false) {
+                    $unmuteTime = $userConfig->get("unmutetime");
+                    if ($unmuteTime < time()) {
+                        $this->getPlugin()->remove("mutedplayers", $player);
+                        $this->getPlugin()->removeIdentity($player);
+                    }
+                }
+            }
+        }
+    }
 }
