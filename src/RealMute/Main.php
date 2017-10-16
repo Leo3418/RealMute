@@ -91,7 +91,7 @@ class Main extends PluginBase implements Listener
         }
         // Checks whether the configuration file is created by RealMute v2.x.x
         $isVer2 = false;
-        if (file_exists($this->getDataFolder() . "config.yml") && 
+        if (file_exists($this->getDataFolder() . "config.yml") &&
             strcmp("2", $this->getConfig()->get("version")[0]) == 0) {
             $isVer2 = true;
         }
@@ -145,7 +145,7 @@ class Main extends PluginBase implements Listener
         $this->getConfig()->save();
 
         // Checks whether the current PocketMine-MP API version supports CID
-        $this->supportCid = (strcmp("1", 
+        $this->supportCid = (strcmp("1",
                 $this->getServer()->getApiVersion()[0]) != 0);
 
         // Registers muted identity list as a configuration file
@@ -181,10 +181,10 @@ class Main extends PluginBase implements Listener
             Config::YAML);
         // Writes the player's identity to their user configuration
         if ($this->supportCid) {
-            $userConfig->set("identity", 
+            $userConfig->set("identity",
                 strval($event->getPlayer()->getClientId()));
         } else {
-            $userConfig->set("identity", 
+            $userConfig->set("identity",
                 strval($event->getPlayer()->getAddress()));
         }
         $userConfig->save();
@@ -202,62 +202,62 @@ class Main extends PluginBase implements Listener
                 $option = array_shift($args);
                 switch ($option) {
                     case "help":
-                        if (count($args) != 1 || 
+                        if (count($args) != 1 ||
                             (count($args) == 1 && $args[0] == 1)) {
-                            $helpMsg = TextFormat::AQUA . "[RealMute] Options" . 
+                            $helpMsg = TextFormat::AQUA . "[RealMute] Options" .
                                 TextFormat::WHITE . " (Page 1/3)" . "\n";
                             $helpMsg .= TextFormat::GOLD . "/realmute help [:page] " .
                                 TextFormat::WHITE . "Jump to another page of Help\n";
                             $helpMsg .= TextFormat::GOLD . "/realmute notify [on|off|fake] " .
                                 TextFormat::WHITE . "Toggle notification to muted players, " .
                                 "or show a fake chat message to muted players\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute muteop " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute muteop " .
                                 TextFormat::WHITE . "When muting all players, include/exclude OPs\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute wordmute " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute wordmute " .
                                 TextFormat::WHITE . "Turn on/off auto-muting players if they send banned words\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute banpm " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute banpm " .
                                 TextFormat::WHITE . "Turn on/off blocking muted players' private messages\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute banspam " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute banspam " .
                                 TextFormat::WHITE . "Turn on/off auto-muting players if they flood the chat screen\n";
                             $sender->sendMessage($helpMsg);
                         } elseif (count($args) == 1 && $args[0] == 2) {
-                            $helpMsg = TextFormat::AQUA . "[RealMute] Options" . 
+                            $helpMsg = TextFormat::AQUA . "[RealMute] Options" .
                                 TextFormat::WHITE . " (Page 2/3)" . "\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute banlengthy [mute|slice|off] " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute banlengthy [mute|slice|off] " .
                                 TextFormat::WHITE . "Mute/Slice/Allow messages exceeding the length limit\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute bansign " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute bansign " .
                                 TextFormat::WHITE . "Allow/Disallow muted players to use signs\n";
                             if ($this->supportCid) {
-                                $helpMsg .= TextFormat::GOLD . "/realmute muteidentity " . 
+                                $helpMsg .= TextFormat::GOLD . "/realmute muteidentity " .
                                     TextFormat::WHITE . "Turn on/off muting players' devices alongside user names\n";
                             } else {
-                                $helpMsg .= TextFormat::GOLD . "/realmute muteidentity " . 
+                                $helpMsg .= TextFormat::GOLD . "/realmute muteidentity " .
                                     TextFormat::WHITE . "Turn on/off muting players' IPs alongside user names\n";
                             }
-                            $helpMsg .= TextFormat::GOLD . "/realmute spamth [time in seconds] " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute spamth [time in seconds] " .
                                 TextFormat::WHITE . "Set minimum interval allowed " .
                                 "between two messages sent by a player (Allowed range: 1-3), set 0 to disable\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute amtime [time in minutes] " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute amtime [time in minutes] " .
                                 TextFormat::WHITE . "Set time limit of auto-mute, set 0 to disable\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute length [number of characters] " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute length [number of characters] " .
                                 TextFormat::WHITE . "Set length limit of chat messages, set 0 to disable\n";
                             $sender->sendMessage($helpMsg);
                         } else {
-                            $helpMsg = TextFormat::AQUA . "[RealMute] Options" . 
+                            $helpMsg = TextFormat::AQUA . "[RealMute] Options" .
                                 TextFormat::WHITE . " (Page 3/3)" . "\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute addword [word] " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute addword [word] " .
                                 TextFormat::WHITE . "Add a keyword to banned-word list. " .
                                 "If you want to match the whole word only, " .
                                 "please add an exclamation mark before the word\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute delword [word] " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute delword [word] " .
                                 TextFormat::WHITE . "Remove a keyword from banned-word list\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute status " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute status " .
                                 TextFormat::WHITE . "View current status of this plugin\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute list " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute list " .
                                 TextFormat::WHITE . "List muted players\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute word " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute word " .
                                 TextFormat::WHITE . "Show the banned-word list\n";
-                            $helpMsg .= TextFormat::GOLD . "/realmute about " . 
+                            $helpMsg .= TextFormat::GOLD . "/realmute about " .
                                 TextFormat::WHITE . "Show information about this plugin\n";
                             $sender->sendMessage($helpMsg);
                         }
@@ -320,7 +320,7 @@ class Main extends PluginBase implements Listener
                                 }
                                 break;
                             default:
-                                $sender->sendMessage("Usage: /realmute notify ".
+                                $sender->sendMessage("Usage: /realmute notify " .
                                     "[on|off|fake]");
                         }
                         break;
@@ -763,9 +763,8 @@ class Main extends PluginBase implements Listener
         if ($this->getConfig()->get("muteall")) {
             if ($this->getConfig()->get("excludeop") &&
                 $event->getPlayer()->hasPermission("realmute.muteignored")) {
-            	return true;
-            }
-            else {
+                return true;
+            } else {
                 $event->setCancelled(true);
                 if ($this->getConfig()->get("notification") === true) {
                     $event->getPlayer()->sendMessage(TextFormat::RED .
@@ -812,13 +811,11 @@ class Main extends PluginBase implements Listener
             $this->lastMsgSender = $player;
             $this->lastMsgTime = time();
             return true;
-        }
-
-        // Checks if a player is muted individually
+        } // Checks if a player is muted individually
         elseif ($this->inList("mutedplayers", $player) ||
-            ($this->getConfig()->get("muteidentity") && 
+            ($this->getConfig()->get("muteidentity") &&
                 in_array($userIdentity, $identitiesMuted))) {
-            $userConfig = new Config($this->getDataFolder() . "players/" . 
+            $userConfig = new Config($this->getDataFolder() . "players/" .
                 strtolower($player[0]) . "/" . strtolower($player) . ".yml");
             if ($userConfig->get("unmuteTime") != false) {
                 $unmuteTime = $userConfig->get("unmuteTime");
@@ -836,8 +833,7 @@ class Main extends PluginBase implements Listener
             if ($this->getConfig()->get("notification") === true) {
                 $event->getPlayer()->sendMessage(TextFormat::RED .
                     "You have been muted in chat.");
-            }
-            elseif ($this->getConfig()->get("notification") === "fake") {
+            } elseif ($this->getConfig()->get("notification") === "fake") {
                 $this->sendFakeMessage($event);
             }
             return true;
@@ -1303,7 +1299,7 @@ class Main extends PluginBase implements Listener
      * @param mixed $player Player instance or player name
      * @return string the player's name
      */
-    private function getPlayerName($player) : string
+    private function getPlayerName($player): string
     {
         if ($player instanceof Player) { // Player instance
             return $player->getName();
