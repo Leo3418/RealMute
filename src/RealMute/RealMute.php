@@ -32,7 +32,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 
-class Main extends PluginBase implements Listener
+class RealMute extends PluginBase implements Listener
 {
     /** @var bool whether the current PocketMine-MP API version supports CID */
     private $supportCid;
@@ -44,6 +44,13 @@ class Main extends PluginBase implements Listener
     private $lastMsgSender = "";
     private $lastMsgTime = "";
     private $consecutiveMsg = 1;
+
+    private static $instance = null;
+
+    public function onLoad()
+    {
+        self::$instance = $this;
+    }
 
     public function onEnable()
     {
@@ -575,9 +582,9 @@ class Main extends PluginBase implements Listener
                                 $userConfig = new Config($this->getDataFolder() .
                                     "players/" . strtolower($player[0]) . "/" .
                                     strtolower($player) . ".yml");
-                                if ($userConfig->get("unmuteTime") != false) {
+                                if ($userConfig->get("unmutetime") != false) {
                                     $timeLimited = true;
-                                    $unmuteTime = $userConfig->get("unmuteTime");
+                                    $unmuteTime = $userConfig->get("unmutetime");
                                     $remaining = (ceil(($unmuteTime - time()) / 60));
                                     $player = $player . "(" . $remaining . ")";
                                 }
@@ -817,8 +824,8 @@ class Main extends PluginBase implements Listener
                 in_array($userIdentity, $identitiesMuted))) {
             $userConfig = new Config($this->getDataFolder() . "players/" .
                 strtolower($player[0]) . "/" . strtolower($player) . ".yml");
-            if ($userConfig->get("unmuteTime") != false) {
-                $unmuteTime = $userConfig->get("unmuteTime");
+            if ($userConfig->get("unmutetime") != false) {
+                $unmuteTime = $userConfig->get("unmutetime");
                 $event->setCancelled(true);
                 if ($this->getConfig()->get("notification") === true) {
                     $event->getPlayer()->sendMessage(TextFormat::RED .
@@ -1029,7 +1036,7 @@ class Main extends PluginBase implements Listener
      * @param string $option name of the list: the flag of the list in config.yml
      * @param string $target the item being added
      */
-    public function add(string $option, string $target)
+    private function add(string $option, string $target)
     {
         if (count(explode(",", $this->getConfig()->get($option))) == 1) {
             $this->getConfig()->set($option, strtolower($target) . ",");
@@ -1046,7 +1053,7 @@ class Main extends PluginBase implements Listener
      * @param string $option name of the list: the flag of the list in config.yml
      * @param string $target the item being removed
      */
-    public function remove(string $option, string $target)
+    private function remove(string $option, string $target)
     {
         $newList = "";
         $count = 0;
@@ -1075,7 +1082,7 @@ class Main extends PluginBase implements Listener
                 strtolower($target) . ".yml")) {
             $userConfig = new Config($this->getDataFolder() . "players/" .
                 strtolower($target[0]) . "/" . strtolower($target) . ".yml");
-            $userConfig->remove("unmuteTime");
+            $userConfig->remove("unmutetime");
             $userConfig->save();
         }
     }
@@ -1085,7 +1092,7 @@ class Main extends PluginBase implements Listener
      *
      * @param string $player the player's user name
      */
-    public function addIdentity(string $player)
+    private function addIdentity(string $player)
     {
         if (is_file($this->getDataFolder() . "players/" . strtolower($player[0]) .
                 "/" . strtolower($player) . ".yml") &&
@@ -1103,7 +1110,7 @@ class Main extends PluginBase implements Listener
      *
      * @param string $player the player's user name
      */
-    public function removeIdentity(string $player)
+    private function removeIdentity(string $player)
     {
         if ($this->getConfig()->get("muteidentity")) {
             $userConfig = new Config($this->getDataFolder() . "players/" .
@@ -1121,7 +1128,7 @@ class Main extends PluginBase implements Listener
      * @param string $target the item being queried
      * @return bool if the item is in the list
      */
-    private function inList(string $option, string $target)
+    private function inList(string $option, string $target): bool
     {
         foreach ((explode(",", $this->getConfig()->get($option))) as $item) {
             if (strcmp(strtolower($target), $item) == 0) {
@@ -1138,7 +1145,7 @@ class Main extends PluginBase implements Listener
      * @param string $option name of the setting: the flag of the option in config.yml
      * @return string "ON" or "OFF"
      */
-    private function isOn(string $option)
+    private function isOn(string $option): string
     {
         if ($this->getConfig()->get($option)) $text = TextFormat::GREEN . "ON";
         else $text = TextFormat::YELLOW . "OFF";
@@ -1161,7 +1168,7 @@ class Main extends PluginBase implements Listener
         }
         $userConfig = new Config($this->getDataFolder() . "players/" .
             strtolower($name[0]) . "/" . strtolower($name) . ".yml", CONFIG::YAML);
-        $userConfig->set("unmuteTime", $unmuteTime);
+        $userConfig->set("unmutetime", $unmuteTime);
         $userConfig->save();
     }
 
@@ -1229,16 +1236,40 @@ class Main extends PluginBase implements Listener
     }
 
     /**
+     * Gets a player's name, no matter what data type of player is given.
+     *
+     * @param mixed $player Player instance or player name
+     * @return string the player's name
+     * @throws \InvalidArgumentException if data type of $player is invalid
+     */
+    private function getPlayerName($player): string
+    {
+        if ($player instanceof Player) { // Player instance
+            return $player->getName();
+        } elseif (gettype($player) == "string") { // Player name
+            return $player;
+        } else {
+            throw new \InvalidArgumentException();
+        }
+    }
+
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
+
+    /**
      * API method
      * Checks if a player is muted.
      *
      * @param mixed $player Player instance or player name
      * @return bool true if the player is muted
      */
-    public function isMuted($player)
+    public function isMuted($player): bool
     {
-        $name = $this->getPlayerName($player);
-        if ($name == null) {
+        try {
+            $name = $this->getPlayerName($player);
+        } catch (\InvalidArgumentException $error) {
             return false;
         }
         $identityList = $this->mutedIdentities->getAll(true);
@@ -1262,10 +1293,14 @@ class Main extends PluginBase implements Listener
      * @param mixed $player Player instance or player name
      * @return bool true if the operation is successful
      */
-    public function mutePlayer($player)
+    public function mutePlayer($player): bool
     {
-        $name = $this->getPlayerName($player);
-        if ($name != null && !$this->inList("mutedplayers", $name)) {
+        try {
+            $name = $this->getPlayerName($player);
+        } catch (\InvalidArgumentException $error) {
+            return false;
+        }
+        if (!$this->inList("mutedplayers", $name)) {
             $this->add("mutedplayers", $name);
             $this->addIdentity($name);
             return true;
@@ -1280,33 +1315,18 @@ class Main extends PluginBase implements Listener
      * @param mixed $player Player instance or player name
      * @return bool true if the operation is successful
      */
-    public function unmutePlayer($player)
+    public function unmutePlayer($player): bool
     {
-        $name = $this->getPlayerName($player);
-        if ($name != null && $this->inList("mutedplayers", $name)) {
+        try {
+            $name = $this->getPlayerName($player);
+        } catch (\InvalidArgumentException $error) {
+            return false;
+        }
+        if ($this->inList("mutedplayers", $name)) {
             $this->remove("mutedplayers", $name);
             $this->removeIdentity($name);
             return true;
         }
         return false;
-    }
-
-    /**
-     * Gets a player's name, no matter what data type of player is given.
-     *
-     * TODO: test this function
-     *
-     * @param mixed $player Player instance or player name
-     * @return string the player's name
-     */
-    private function getPlayerName($player): string
-    {
-        if ($player instanceof Player) { // Player instance
-            return $player->getName();
-        } elseif (gettype($player) != "object") { // Player name
-            return $player;
-        } else {
-            return null;
-        }
     }
 }
