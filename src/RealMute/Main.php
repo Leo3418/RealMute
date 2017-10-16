@@ -763,6 +763,7 @@ class Main extends PluginBase implements Listener
         if ($this->getConfig()->get("muteall")) {
             if ($this->getConfig()->get("excludeop") &&
                 $event->getPlayer()->hasPermission("realmute.muteignored")) {
+            	return true;
             }
             else {
                 $event->setCancelled(true);
